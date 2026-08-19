@@ -2,7 +2,9 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
+const { passport } = require('./config/passport');
 
 // Connect to MongoDB
 connectDB();
@@ -10,14 +12,21 @@ connectDB();
 const app = express();
 
 // Core middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || true,
+    credentials: true, // required so the browser sends/receives the auth cookies
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(passport.initialize());
 
+// Feature routes
+app.use('/api/auth', require('./routes/authRoutes'));
 
-
-// Feature routes will be mounted here as they are built, e.g.:
-// app.use('/api/users', require('./routes/userRoutes'));
+// Additional feature routes will be mounted here as they are built, e.g.:
 // app.use('/api/products', require('./routes/productRoutes'));
 // app.use('/api/cart', require('./routes/cartRoutes'));
 
