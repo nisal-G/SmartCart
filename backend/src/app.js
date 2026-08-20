@@ -6,9 +6,6 @@ const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
 const { passport } = require('./config/passport');
 
-// Connect to MongoDB
-connectDB();
-
 const app = express();
 
 // Core middleware
@@ -26,9 +23,9 @@ app.use(passport.initialize());
 // Feature routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/categories', require('./routes/categoryRoutes'));
+app.use('/api/products', require('./routes/productRoutes'));
 
 // Additional feature routes will be mounted here as they are built, e.g.:
-// app.use('/api/products', require('./routes/productRoutes'));
 // app.use('/api/cart', require('./routes/cartRoutes'));
 
 // 404 handler for unmatched routes
@@ -44,10 +41,16 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
+// Only connect to MongoDB and start listening when this file is run
+// directly (`node src/app.js` / `npm start` / `npm run dev`), so the
+// Express app can also be imported elsewhere without side effects.
+if (require.main === module) {
+  connectDB();
 
-app.listen(PORT, () => {
-  console.log(`SmartCart backend running on port ${PORT}`);
-});
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`SmartCart backend running on port ${PORT}`);
+  });
+}
 
 module.exports = app;
