@@ -18,6 +18,7 @@
   "type": "commonjs",
   "dependencies": {
     "@simplewebauthn/server": "^13.3.2",
+    "@supabase/supabase-js": "^2.112.3",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
@@ -27,6 +28,7 @@
     "express-validator": "^7.3.2",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.9.3",
+    "multer": "^2.2.0",
     "nodemon": "^3.1.14",
     "passport": "^0.7.0",
     "passport-facebook": "^3.0.0",

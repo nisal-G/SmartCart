@@ -25,6 +25,7 @@ app.use(passport.initialize());
 
 // Feature routes
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/categories', require('./routes/categoryRoutes'));
 
 // Additional feature routes will be mounted here as they are built, e.g.:
 // app.use('/api/products', require('./routes/productRoutes'));
