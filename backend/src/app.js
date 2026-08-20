@@ -24,9 +24,9 @@ app.use(passport.initialize());
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/categories', require('./routes/categoryRoutes'));
 app.use('/api/products', require('./routes/productRoutes'));
+app.use('/api/cart', require('./routes/cartRoutes'));
 
-// Additional feature routes will be mounted here as they are built, e.g.:
-// app.use('/api/cart', require('./routes/cartRoutes'));
+// Additional feature routes will be mounted here as they are built.
 
 // 404 handler for unmatched routes
 app.use((req, res) => {
