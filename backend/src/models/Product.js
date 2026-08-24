@@ -41,6 +41,17 @@ const productSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'User',
     },
+
+    // Availability flag consumed by Cart (requireAvailableProduct) and
+    // Order (orderController.buildOrderItems) to block adding-to-cart /
+    // checkout on a product an admin has pulled from sale without deleting
+    // it outright (deleting would break historical Orders' `product` ref).
+    // Defaults to true so every existing product stays purchasable exactly
+    // as before this field was added.
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   },
   { timestamps: true }
 );
