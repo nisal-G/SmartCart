@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
+const logger = require('./logger');
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY;
@@ -18,7 +19,7 @@ if (isSupabaseConfigured) {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 } else {
-  console.warn(
+  logger.warn(
     '[storage] Supabase Storage is not configured (missing SUPABASE_URL/SUPABASE_SECRET_KEY/SUPABASE_STORAGE_BUCKET) — image upload endpoints will return 503.'
   );
 }

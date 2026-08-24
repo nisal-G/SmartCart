@@ -2,6 +2,7 @@ const passport = require('passport');
 const { Strategy: GoogleStrategy } = require('passport-google-oauth20');
 const { Strategy: FacebookStrategy } = require('passport-facebook');
 const User = require('../models/User');
+const logger = require('./logger');
 
 /**
  * Finds an existing user for this OAuth identity, linking it to an existing
@@ -75,7 +76,7 @@ if (isGoogleConfigured) {
     )
   );
 } else {
-  console.warn(
+  logger.warn(
     '[auth] Google OAuth not configured (missing GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET) — /api/auth/google will return 503.'
   );
 }
@@ -100,7 +101,7 @@ if (isFacebookConfigured) {
     )
   );
 } else {
-  console.warn(
+  logger.warn(
     '[auth] Facebook OAuth not configured (missing FACEBOOK_APP_ID/FACEBOOK_APP_SECRET) — /api/auth/facebook will return 503.'
   );
 }

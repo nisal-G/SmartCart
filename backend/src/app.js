@@ -2,23 +2,40 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
+const pinoHttp = require('pino-http');
 const connectDB = require('./config/db');
+const logger = require('./config/logger');
+const { corsOptions } = require('./config/cors');
 const { passport } = require('./config/passport');
+const { generalLimiter } = require('./middleware/rateLimiter');
+const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
 // Core middleware
 app.use(
-  cors({
-    origin: process.env.FRONTEND_URL || true,
-    credentials: true, // required so the browser sends/receives the auth cookies
+  helmet({
+    // The API is intentionally consumed cross-origin (a separate frontend
+    // origin, gated by the `corsOptions` allow-list below, not by CORP) —
+    // helmet's 'same-origin' default would have browsers block the
+    // frontend from reading otherwise-legitimate, CORS-approved responses.
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
   })
 );
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(pinoHttp({ logger }));
 app.use(passport.initialize());
+
+// General API rate limiting (SRS §4 Security NFR). Auth's own routes keep
+// their stricter, credential-guessing-focused authLimiter on top of this
+// (see routes/authRoutes.js) — this one is a much looser ceiling against
+// scripted scraping/abuse of the rest of the API.
+app.use('/api', generalLimiter);
 
 // Feature routes
 app.use('/api/auth', require('./routes/authRoutes'));
@@ -35,12 +52,7 @@ app.use((req, res) => {
 });
 
 // Global error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({
-    message: err.message || 'Internal Server Error',
-  });
-});
+app.use(errorHandler);
 
 // Only connect to MongoDB and start listening when this file is run
 // directly (`node src/app.js` / `npm start` / `npm run dev`), so the
@@ -50,7 +62,7 @@ if (require.main === module) {
 
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
-    console.log(`SmartCart backend running on port ${PORT}`);
+    logger.info(`SmartCart backend running on port ${PORT}`);
   });
 }
 
