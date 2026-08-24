@@ -328,3 +328,34 @@ describe('Data integrity: price snapshot', () => {
     expect(freshProduct.price).toBe(600);
   });
 });
+
+describe('Data integrity: concurrent checkout cannot double-charge a single cart', () => {
+  test('firing many simultaneous checkout requests for the same cart creates exactly one order', async () => {
+    const { user, accessToken } = await createUser();
+    const product = await createProduct({ price: 10 });
+    await Cart.create({
+      user: user._id,
+      items: [{ product: product._id, quantity: 1 }],
+      total: 0,
+    });
+
+    // The cart's "has items" check must be atomic with clearing it —
+    // otherwise concurrent requests can all observe a non-empty cart
+    // before any of them clears it, and each create its own Order.
+    const responses = await Promise.all(
+      Array.from({ length: 10 }, () =>
+        request(app).post('/api/orders').set('Cookie', accessCookie(accessToken))
+      )
+    );
+
+    const succeeded = responses.filter((res) => res.status === 201);
+    const rejected = responses.filter((res) => res.status === 400);
+    expect(succeeded).toHaveLength(1);
+    expect(rejected).toHaveLength(9);
+
+    expect(await Order.countDocuments({ user: user._id })).toBe(1);
+
+    const cart = await Cart.findOne({ user: user._id });
+    expect(cart.items).toHaveLength(0);
+  });
+});
