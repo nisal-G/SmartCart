@@ -2,9 +2,11 @@ const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 const asyncHandler = require('../utils/asyncHandler');
 
-// Fields returned for a cart item's product — enough for the cart UI
-// without leaking category/createdBy/timestamps etc.
-const PRODUCT_PREVIEW_FIELDS = 'name price image';
+// Fields populated for a cart item's product. `isActive` is included so
+// buildCartResponse can actually prune items whose product was
+// deactivated (see below) — it is deliberately never included in the DTO
+// returned to clients, alongside category/createdBy/timestamps etc.
+const PRODUCT_PREVIEW_FIELDS = 'name price image isActive';
 
 /** Loads the request error the global handler renders with the given status. */
 function requestError(status, message) {

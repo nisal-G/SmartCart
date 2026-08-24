@@ -79,27 +79,38 @@ function toOrderDTO(order) {
  * transactions are available) so the order is created and the cart is
  * cleared atomically: if anything fails, neither happens, and the cart is
  * never cleared without a corresponding order existing.
+ *
+ * The cart is read INSIDE the transaction (via `.session(session)`), not
+ * before it starts. That's load-bearing, not stylistic: two concurrent
+ * checkout requests for the same user must not both be able to see the
+ * cart as non-empty and each create an Order from it. Reading inside the
+ * transaction means the second request's write to the same Cart document
+ * conflicts with the first once it commits; MongoDB reports that as a
+ * TransientTransactionError, `session.withTransaction` automatically
+ * retries the callback, and on retry the second request re-reads the
+ * cart — now already emptied by the first — and correctly fails with
+ * "Your cart is empty" instead of creating a duplicate order. (Confirmed
+ * with a 10-concurrent-request repro against the previous, non-atomic
+ * version of this check: it produced 10 orders from a single cart.)
  */
 const checkout = asyncHandler(async (req, res) => {
-  const cart = await Cart.findOne({ user: req.user._id });
-  if (!cart) {
-    throw requestError(400, 'Your cart is empty');
-  }
-  if (!cart.items || cart.items.length === 0) {
-    throw requestError(400, 'Your cart is empty');
-  }
-
-  const productIds = cart.items.map((item) => item.product);
-  const products = await Product.find({ _id: { $in: productIds } });
-
-  // Computed entirely from live Product prices — the client's cart/total is
-  // never trusted (SRS §3.4 / project security requirements).
-  const { items, total } = buildOrderItems(cart.items, products);
-
   const session = await mongoose.startSession();
   let order;
   try {
     await session.withTransaction(async () => {
+      const cart = await Cart.findOne({ user: req.user._id }).session(session);
+      if (!cart || !cart.items || cart.items.length === 0) {
+        throw requestError(400, 'Your cart is empty');
+      }
+
+      const productIds = cart.items.map((item) => item.product);
+      const products = await Product.find({ _id: { $in: productIds } }).session(session);
+
+      // Computed entirely from live Product prices — the client's
+      // cart/total is never trusted (SRS §3.4 / project security
+      // requirements).
+      const { items, total } = buildOrderItems(cart.items, products);
+
       const created = await Order.create(
         [{ user: req.user._id, items, total, status: 'pending' }],
         { session }

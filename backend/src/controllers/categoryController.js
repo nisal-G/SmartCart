@@ -1,6 +1,7 @@
 const Category = require('../models/Category');
 const asyncHandler = require('../utils/asyncHandler');
 const imageStorageService = require('../services/imageStorageService');
+const logger = require('../config/logger');
 
 // Storage folder this feature's uploads live under — keeps them separate
 // from Product Management's uploads, which will use their own folder.
@@ -10,7 +11,7 @@ const IMAGE_FOLDER = 'categories';
 function cleanupImage(url) {
   if (!url) return;
   imageStorageService.deleteImageByUrl(url).catch((err) => {
-    console.error('Failed to delete category image from storage:', err.message);
+    logger.error({ err, url }, 'Failed to delete category image from storage');
   });
 }
 
