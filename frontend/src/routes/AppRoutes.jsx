@@ -10,6 +10,8 @@ import { ProductDetails } from '../pages/ProductDetails';
 import { Cart } from '../pages/Cart';
 import { Checkout } from '../pages/Checkout';
 import { Orders } from '../pages/Orders';
+import { PaymentReturn } from '../pages/PaymentReturn';
+import { PaymentCancel } from '../pages/PaymentCancel';
 import { Admin } from '../pages/Admin';
 import { NotFound } from '../pages/NotFound';
 
@@ -33,6 +35,11 @@ export function AppRoutes() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/orders" element={<Orders />} />
+          {/* PayHere return/cancel URLs (backend/.env PAYHERE_RETURN_URL /
+              PAYHERE_CANCEL_URL) — fetch the order, so require a session
+              the same as every other order-scoped route. */}
+          <Route path="/payment/return" element={<PaymentReturn />} />
+          <Route path="/payment/cancel" element={<PaymentCancel />} />
         </Route>
 
         {/* Requires a logged-in admin */}
