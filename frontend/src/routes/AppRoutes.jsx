@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { MainLayout } from '../layouts/MainLayout';
+import { AdminLayout } from '../layouts/AdminLayout';
 import { ProtectedRoute } from './ProtectedRoute';
 import { ROLES } from '../constants/roles';
 import { Home } from '../pages/Home';
@@ -13,7 +14,11 @@ import { Orders } from '../pages/Orders';
 import { OrderDetails } from '../pages/OrderDetails';
 import { PaymentReturn } from '../pages/PaymentReturn';
 import { PaymentCancel } from '../pages/PaymentCancel';
-import { Admin } from '../pages/Admin';
+import { AdminDashboard } from '../pages/admin/AdminDashboard';
+import { AdminProducts } from '../pages/admin/AdminProducts';
+import { AdminProductForm } from '../pages/admin/AdminProductForm';
+import { AdminCategories } from '../pages/admin/AdminCategories';
+import { AdminCategoryForm } from '../pages/admin/AdminCategoryForm';
 import { NotFound } from '../pages/NotFound';
 
 /**
@@ -46,7 +51,15 @@ export function AppRoutes() {
 
         {/* Requires a logged-in admin */}
         <Route element={<ProtectedRoute role={ROLES.ADMIN} />}>
-          <Route path="/admin" element={<Admin />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="products" element={<AdminProducts />} />
+            <Route path="products/new" element={<AdminProductForm />} />
+            <Route path="products/:id/edit" element={<AdminProductForm />} />
+            <Route path="categories" element={<AdminCategories />} />
+            <Route path="categories/new" element={<AdminCategoryForm />} />
+            <Route path="categories/:id/edit" element={<AdminCategoryForm />} />
+          </Route>
         </Route>
 
         <Route path="*" element={<NotFound />} />
