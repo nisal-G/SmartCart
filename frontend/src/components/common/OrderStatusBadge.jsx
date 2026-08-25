@@ -1,4 +1,5 @@
 import { classNames } from '../../utils/classNames';
+import { formatStatusLabel } from '../../constants/orderStatuses';
 
 // One entry per backend/src/models/Order.js ORDER_STATUSES — fulfillment
 // state only (never payment state, see Order.js's own comment on why the
@@ -22,12 +23,6 @@ const PAYMENT_TONE_CLASSES = {
 
 const FALLBACK_TONE_CLASSES = 'border-slate-200 bg-slate-50 text-slate-700';
 
-/** "charged_back" -> "Charged back" */
-function formatLabel(status) {
-  const words = String(status).split('_').join(' ');
-  return words.charAt(0).toUpperCase() + words.slice(1);
-}
-
 /**
  * Small pill showing either an order's fulfillment status or its payment
  * status — never inferring one from the other. Only ever renders a status
@@ -47,7 +42,7 @@ export function OrderStatusBadge({ status, type = 'order' }) {
         toneClasses
       )}
     >
-      {formatLabel(status)}
+      {formatStatusLabel(status)}
     </span>
   );
 }
