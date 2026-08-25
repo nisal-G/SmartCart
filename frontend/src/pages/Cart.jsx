@@ -153,7 +153,12 @@ export function Cart() {
       <h1 className="mb-6 text-2xl font-semibold text-slate-900">Your cart</h1>
 
       <div className="grid gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+        {/* min-w-0: without it, this grid item's default min-width:auto lets
+            a long product name's intrinsic (nowrap) text width bubble up
+            through the grid track, defeating CartItem's own `truncate` and
+            overflowing narrow viewports horizontally — see the regression
+            test in responsive/responsive.spec.js. */}
+        <div className="min-w-0 lg:col-span-2">
           <CartList
             items={cart.items}
             pendingActions={pendingActions}

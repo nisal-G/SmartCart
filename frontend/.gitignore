@@ -17,6 +17,14 @@ dist-ssr
 .env.*
 !.env.example
 
+# Playwright E2E (see tests/README.md) — reports/traces can contain
+# screenshots/HTML from a real run and the harness's runtime seed file
+# (cookies for the throwaway test session) should never be committed.
+playwright-report
+test-results
+tests/e2e-env/.runtime
+blob-report
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
