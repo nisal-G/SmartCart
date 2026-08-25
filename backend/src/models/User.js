@@ -3,6 +3,14 @@ const bcrypt = require('bcryptjs');
 
 const { Schema } = mongoose;
 
+const ROLES = ['user', 'admin'];
+
+// 'pending' = passkey registration was started but never completed (see
+// authController.passkeyRegisterOptions); such accounts cannot log in.
+// Only 'active'/'suspended' are ever admin-settable — see
+// validators/userValidators.js ADMIN_SETTABLE_STATUSES.
+const STATUSES = ['pending', 'active', 'suspended'];
+
 /**
  * A single registered WebAuthn (Passkey) credential.
  * Only what the server needs to verify future assertions is stored —
@@ -88,16 +96,14 @@ const userSchema = new Schema(
 
     role: {
       type: String,
-      enum: ['user', 'admin'],
+      enum: ROLES,
       default: 'user',
       required: true,
     },
 
-    // 'pending' = passkey registration was started but never completed
-    // (see authController.passkeyRegisterOptions); such accounts cannot log in.
     status: {
       type: String,
-      enum: ['pending', 'active', 'suspended'],
+      enum: STATUSES,
       default: 'active',
       required: true,
     },
@@ -157,4 +163,8 @@ userSchema.set('toJSON', {
   },
 });
 
-module.exports = mongoose.model('User', userSchema);
+const User = mongoose.model('User', userSchema);
+User.ROLES = ROLES;
+User.STATUSES = STATUSES;
+
+module.exports = User;
