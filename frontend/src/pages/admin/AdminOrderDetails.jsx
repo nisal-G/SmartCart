@@ -122,7 +122,10 @@ export function AdminOrderDetails() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+        {/* min-w-0: see the identical fix/comment in Cart.jsx — a long
+            item name's nowrap intrinsic width can otherwise widen this
+            grid track past the viewport on narrow screens. */}
+        <div className="min-w-0 space-y-6 lg:col-span-2">
           <div className="rounded-lg border border-slate-200 bg-white p-6">
             <h3 className="mb-4 text-base font-semibold text-slate-900">Order information</h3>
             <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
@@ -178,7 +181,7 @@ export function AdminOrderDetails() {
                 <div>
                   <dt className="text-slate-500">Payment amount</dt>
                   <dd className="mt-0.5 font-medium text-slate-900">
-                    {formatCurrency(payment.amount, payment.currency || 'USD')}
+                    {formatCurrency(payment.amount, payment.currency)}
                   </dd>
                 </div>
               )}

@@ -87,7 +87,10 @@ export function OrderDetails() {
       <h1 className="mb-6 text-2xl font-semibold text-slate-900">Order details</h1>
 
       <div className="grid gap-8 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+        {/* min-w-0: see the identical fix/comment in Cart.jsx — a long
+            item name's nowrap intrinsic width can otherwise widen this
+            grid track past the viewport on narrow screens. */}
+        <div className="min-w-0 space-y-6 lg:col-span-2">
           <div className="rounded-lg border border-slate-200 bg-white p-6">
             <h2 className="mb-4 text-lg font-semibold text-slate-900">Order information</h2>
             <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
