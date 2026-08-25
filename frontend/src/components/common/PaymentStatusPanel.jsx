@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '../ui/Button';
+import { Icon } from '../ui/Icon';
 import { Loading } from './Loading';
 import { ErrorMessage } from './ErrorMessage';
 import { formatCurrency } from '../../utils/formatCurrency';
@@ -9,18 +10,18 @@ import { ROUTES } from '../../constants/routes';
 // — no financial/legal claims invented, and 'charged_back' is deliberately
 // neutral rather than framed as success or failure.
 const STATUS_COPY = {
-  paid: { title: 'Payment successful', tone: 'success' },
-  pending: { title: 'Payment is being processed', tone: 'pending' },
-  failed: { title: 'Payment failed', tone: 'error' },
-  cancelled: { title: 'Payment cancelled', tone: 'error' },
-  charged_back: { title: 'Payment charged back', tone: 'neutral' },
+  paid: { title: 'Payment successful', tone: 'success', icon: 'checkCircle' },
+  pending: { title: 'Payment is being processed', tone: 'pending', icon: 'info' },
+  failed: { title: 'Payment failed', tone: 'error', icon: 'alert' },
+  cancelled: { title: 'Payment cancelled', tone: 'error', icon: 'alert' },
+  charged_back: { title: 'Payment charged back', tone: 'neutral', icon: 'info' },
 };
 
 const TONE_CLASSES = {
-  success: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-  pending: 'border-amber-200 bg-amber-50 text-amber-800',
-  error: 'border-red-200 bg-red-50 text-red-800',
-  neutral: 'border-slate-200 bg-slate-50 text-slate-800',
+  success: { ring: 'ring-emerald-200', badge: 'bg-emerald-100 text-emerald-700' },
+  pending: { ring: 'ring-amber-200', badge: 'bg-amber-100 text-amber-700' },
+  error: { ring: 'ring-red-200', badge: 'bg-red-100 text-red-700' },
+  neutral: { ring: 'ring-slate-200', badge: 'bg-slate-100 text-slate-600' },
 };
 
 const RETRYABLE_STATUSES = new Set(['failed', 'cancelled']);
@@ -57,33 +58,50 @@ export function PaymentStatusPanel({ orderId, order, loading, error, polling, on
 
   const status = order.payment?.status || 'pending';
   const copy = STATUS_COPY[status] || STATUS_COPY.pending;
+  const tone = TONE_CLASSES[copy.tone];
 
   return (
-    <div className="mx-auto max-w-lg">
-      <div className={`rounded-lg border p-6 text-center sm:p-8 ${TONE_CLASSES[copy.tone]}`}>
-        <h1 className="text-2xl font-semibold">{copy.title}</h1>
+    <div className="mx-auto max-w-xl">
+      <div
+        className={`rounded-panel border border-slate-200 bg-white p-6 text-center shadow-card ring-1 sm:p-8 ${tone.ring}`}
+      >
+        <span
+          className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full ${tone.badge}`}
+          aria-hidden="true"
+        >
+          <Icon name={copy.icon} size="xl" />
+        </span>
+
+        <h1 className="mt-5 text-2xl font-bold tracking-tight text-slate-900">{copy.title}</h1>
 
         {status === 'pending' && (
-          <p className="mt-2 text-sm">
+          <p className="mt-2 text-sm text-slate-600">
             We&apos;re waiting for confirmation from PayHere — this can take a few moments.
           </p>
         )}
         {status === 'charged_back' && (
-          <p className="mt-2 text-sm">This payment was later reversed by the card issuer/bank.</p>
+          <p className="mt-2 text-sm text-slate-600">
+            This payment was later reversed by the card issuer/bank.
+          </p>
         )}
 
-        <dl className="mt-6 space-y-2 rounded-md border border-black/5 bg-white/70 p-4 text-left text-sm">
+        <dl className="mt-6 space-y-3 rounded-card border border-slate-200 bg-slate-50/70 p-4 text-left text-sm">
           <div className="flex items-center justify-between gap-4">
-            <dt>Order ID</dt>
-            <dd className="truncate font-mono text-xs font-medium">{order._id}</dd>
+            <dt className="text-slate-500">Order ID</dt>
+            <dd className="truncate font-mono text-xs font-semibold text-slate-900">{order._id}</dd>
           </div>
           <div className="flex items-center justify-between">
-            <dt>Payment status</dt>
-            <dd className="font-medium capitalize">{status.replace('_', ' ')}</dd>
+            <dt className="text-slate-500">Payment status</dt>
+            {/* Rendered as the backend's own status value (lower case, with
+                underscores spaced out) — capitalisation is presentational
+                only, so the underlying text stays the API's wording. */}
+            <dd className="font-semibold capitalize text-slate-900">{status.replace('_', ' ')}</dd>
           </div>
-          <div className="flex items-center justify-between border-t border-black/5 pt-2 text-base font-semibold">
-            <dt>Total</dt>
-            <dd>{formatCurrency(order.total)}</dd>
+          <div className="flex items-baseline justify-between border-t border-slate-200 pt-3">
+            <dt className="font-semibold text-slate-900">Total</dt>
+            <dd className="text-lg font-extrabold tabular-nums text-slate-900">
+              {formatCurrency(order.total)}
+            </dd>
           </div>
         </dl>
 
@@ -105,7 +123,7 @@ export function PaymentStatusPanel({ orderId, order, loading, error, polling, on
             </Button>
           </Link>
           <Link to={ROUTES.PRODUCTS} className="flex-1">
-            <Button variant="secondary" fullWidth>
+            <Button variant="ghost" fullWidth>
               Continue shopping
             </Button>
           </Link>

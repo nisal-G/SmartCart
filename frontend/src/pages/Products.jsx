@@ -1,14 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { PageWrapper } from '../components/ui/PageWrapper';
-import { Button } from '../components/ui/Button';
-import { Loading } from '../components/common/Loading';
+import { PageHeader } from '../components/ui/PageHeader';
+import { Breadcrumbs } from '../components/ui/Breadcrumbs';
+import { Icon } from '../components/ui/Icon';
 import { ErrorMessage } from '../components/common/ErrorMessage';
 import { EmptyState } from '../components/common/EmptyState';
 import { ProductGrid } from '../components/common/ProductGrid';
+import { ProductGridSkeleton } from '../components/common/skeletons';
 import { CategoryList } from '../components/common/CategoryList';
+import { Pagination } from '../components/common/Pagination';
 import productService from '../services/productService';
 import categoryService from '../services/categoryService';
+import { ROUTES } from '../constants/routes';
 
 const PAGE_SIZE = 12;
 
@@ -16,6 +20,9 @@ const PAGE_SIZE = 12;
 export function Products() {
   const [searchParams, setSearchParams] = useSearchParams();
   const categoryFilter = searchParams.get('category') || null;
+  // Set by the header's search field, which submits to /products?search=…
+  // (the backend's own product `search` filter — no client-side filtering).
+  const searchTerm = searchParams.get('search') || '';
   const page = Number(searchParams.get('page')) || 1;
 
   const [categories, setCategories] = useState([]);
@@ -53,6 +60,7 @@ export function Products() {
         setError(null);
         return productService.getProducts({
           category: categoryFilter || undefined,
+          search: searchTerm || undefined,
           page,
           limit: PAGE_SIZE,
         });
@@ -71,7 +79,7 @@ export function Products() {
     return () => {
       ignore = true;
     };
-  }, [categoryFilter, page]);
+  }, [categoryFilter, searchTerm, page]);
 
   useEffect(() => fetchProducts(), [fetchProducts]);
 
@@ -86,15 +94,60 @@ export function Products() {
     setSearchParams(next);
   }
 
+  function clearSearch() {
+    const next = new URLSearchParams(searchParams);
+    next.delete('search');
+    next.delete('page');
+    setSearchParams(next);
+  }
+
   function goToPage(nextPage) {
     const next = new URLSearchParams(searchParams);
     next.set('page', String(nextPage));
     setSearchParams(next);
   }
 
+  const activeCategoryName = categories.find((c) => c._id === categoryFilter)?.name;
+  const total = pagination?.total;
+
   return (
     <PageWrapper>
-      <h1 className="mb-6 text-2xl font-semibold text-slate-900">Products</h1>
+      <PageHeader
+        breadcrumb={
+          <Breadcrumbs
+            items={[
+              { label: 'Home', to: ROUTES.HOME },
+              { label: activeCategoryName || 'Products' },
+            ]}
+          />
+        }
+        title="Products"
+        description={
+          activeCategoryName
+            ? `Everything currently listed under ${activeCategoryName}.`
+            : 'Browse the full SmartCart catalogue.'
+        }
+      />
+
+      {searchTerm && (
+        <div className="mb-5 flex flex-wrap items-center gap-3 rounded-card border border-slate-200 bg-white p-3 shadow-card sm:p-4">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+            <Icon name="search" size="sm" />
+          </span>
+          <p className="min-w-0 flex-1 text-sm text-slate-600">
+            Showing results for{' '}
+            <span className="font-semibold text-slate-900">&ldquo;{searchTerm}&rdquo;</span>
+          </p>
+          <button
+            type="button"
+            onClick={clearSearch}
+            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+          >
+            <Icon name="close" size="xs" />
+            Clear search
+          </button>
+        </div>
+      )}
 
       {categories.length > 0 && (
         <div className="mb-6">
@@ -106,17 +159,27 @@ export function Products() {
         </div>
       )}
 
-      {loading && <Loading label="Loading products…" />}
+      {!loading && !error && products.length > 0 && total != null && (
+        <p className="mb-4 text-sm text-slate-500">
+          {total} {total === 1 ? 'product' : 'products'}
+          {activeCategoryName ? ` in ${activeCategoryName}` : ''}
+        </p>
+      )}
+
+      {loading && <ProductGridSkeleton count={PAGE_SIZE} />}
 
       {!loading && error && <ErrorMessage message={error} onRetry={fetchProducts} />}
 
       {!loading && !error && products.length === 0 && (
         <EmptyState
+          icon={searchTerm ? 'search' : 'package'}
           title="No products found"
           description={
-            categoryFilter
-              ? 'There are no products in this category yet.'
-              : 'There are no products available right now.'
+            searchTerm
+              ? `Nothing matched “${searchTerm}”. Try a different search term or browse a category.`
+              : categoryFilter
+                ? 'There are no products in this category yet.'
+                : 'There are no products available right now.'
           }
         />
       )}
@@ -124,30 +187,7 @@ export function Products() {
       {!loading && !error && products.length > 0 && (
         <>
           <ProductGrid products={products} />
-
-          {pagination && pagination.totalPages > 1 && (
-            <div className="mt-8 flex items-center justify-center gap-4">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={pagination.page <= 1}
-                onClick={() => goToPage(pagination.page - 1)}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-slate-600">
-                Page {pagination.page} of {pagination.totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={pagination.page >= pagination.totalPages}
-                onClick={() => goToPage(pagination.page + 1)}
-              >
-                Next
-              </Button>
-            </div>
-          )}
+          <Pagination pagination={pagination} onPageChange={goToPage} />
         </>
       )}
     </PageWrapper>

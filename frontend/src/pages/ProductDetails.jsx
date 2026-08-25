@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { PageWrapper } from '../components/ui/PageWrapper';
+import { Breadcrumbs } from '../components/ui/Breadcrumbs';
 import { Button } from '../components/ui/Button';
-import { Loading } from '../components/common/Loading';
+import { Icon } from '../components/ui/Icon';
+import { Badge } from '../components/ui/Badge';
+import { Skeleton } from '../components/ui/Skeleton';
 import { ErrorMessage } from '../components/common/ErrorMessage';
 import { EmptyState } from '../components/common/EmptyState';
 import productService from '../services/productService';
@@ -10,6 +13,22 @@ import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
 import { formatCurrency } from '../utils/formatCurrency';
 import { ROUTES } from '../constants/routes';
+
+/** Matches the real page's two-column layout so nothing jumps when the product lands. */
+function ProductDetailsSkeleton() {
+  return (
+    <div className="grid gap-8 lg:grid-cols-2 lg:gap-12" aria-hidden="true">
+      <Skeleton className="aspect-square w-full rounded-panel" />
+      <div className="space-y-4 pt-2">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-8 w-3/4" />
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-12 w-56 rounded-control" />
+      </div>
+    </div>
+  );
+}
 
 /** Product details (SRS §3.2) — public browsing, with Add to Cart wired to CartContext. */
 export function ProductDetails() {
@@ -30,8 +49,7 @@ export function ProductDetails() {
 
   // Written as an inline promise chain (rather than calling setLoading/setError
   // synchronously) so every setState call is a literal callback passed to
-  // .then/.catch/.finally, not a synchronous call in the effect body itself —
-  // same pattern as context/CartContext.jsx.
+  // .then/.catch/.finally, same pattern as context/CartContext.jsx.
   const fetchProduct = useCallback(() => {
     let ignore = false;
     Promise.resolve()
@@ -87,7 +105,7 @@ export function ProductDetails() {
   if (loading) {
     return (
       <PageWrapper>
-        <Loading label="Loading product…" />
+        <ProductDetailsSkeleton />
       </PageWrapper>
     );
   }
@@ -124,85 +142,158 @@ export function ProductDetails() {
 
   return (
     <PageWrapper>
-      <div className="grid gap-8 md:grid-cols-2">
-        <div className="aspect-square w-full overflow-hidden rounded-lg bg-slate-100">
-          {product.image ? (
-            <img
-              src={product.image}
-              alt={product.name}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-slate-400">
-              No image
-            </div>
-          )}
+      <Breadcrumbs
+        items={[
+          { label: 'Home', to: ROUTES.HOME },
+          { label: 'Products', to: ROUTES.PRODUCTS },
+          { label: product.name },
+        ]}
+      />
+
+      <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
+        <div className="overflow-hidden rounded-panel border border-slate-200 bg-white p-3 shadow-card">
+          <div className="aspect-square w-full overflow-hidden rounded-card bg-slate-100">
+            {product.image ? (
+              <img
+                src={product.image}
+                alt={product.name}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-slate-300">
+                <Icon name="package" size="xl" strokeWidth={1.5} className="h-12 w-12" />
+                <span className="text-sm font-medium text-slate-400">No image</span>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-col gap-4">
-          {product.category?.name && (
-            <span className="text-xs font-medium uppercase tracking-wide text-indigo-600">
-              {product.category.name}
-            </span>
-          )}
-          <h1 className="text-2xl font-semibold text-slate-900 sm:text-3xl">{product.name}</h1>
-          <p className="text-2xl font-semibold text-slate-900">{formatCurrency(product.price)}</p>
+        <div className="flex flex-col">
+          {/* The category is only a link when the API actually populated it
+              (it can come back as a bare id) — never a link to nowhere. */}
+          {product.category?.name &&
+            (product.category._id ? (
+              <Link
+                to={`${ROUTES.PRODUCTS}?category=${product.category._id}`}
+                className="text-xs font-semibold uppercase tracking-wider text-brand-700 transition-colors hover:text-brand-800"
+              >
+                {product.category.name}
+              </Link>
+            ) : (
+              <span className="text-xs font-semibold uppercase tracking-wider text-brand-700">
+                {product.category.name}
+              </span>
+            ))}
 
-          {product.description && (
-            <p className="leading-relaxed text-slate-600">{product.description}</p>
-          )}
+          <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            {product.name}
+          </h1>
 
-          <p
-            className={
-              isAvailable ? 'text-sm font-medium text-green-600' : 'text-sm font-medium text-red-600'
-            }
-          >
-            {isAvailable ? 'In stock' : 'Currently unavailable'}
+          <p className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900">
+            {formatCurrency(product.price)}
           </p>
 
-          {isAvailable && (
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center rounded-md border border-slate-300">
-                <button
-                  type="button"
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="px-3 py-2 text-slate-600 hover:bg-slate-50"
-                  aria-label="Decrease quantity"
-                >
-                  −
-                </button>
-                <span className="w-8 text-center text-sm font-medium" aria-live="polite">
-                  {quantity}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setQuantity((q) => q + 1)}
-                  className="px-3 py-2 text-slate-600 hover:bg-slate-50"
-                  aria-label="Increase quantity"
-                >
-                  +
-                </button>
-              </div>
-              <Button
-                onClick={handleAddToCart}
-                loading={addState === 'adding'}
-                disabled={addState === 'adding'}
-              >
-                Add to cart
-              </Button>
+          <div className="mt-3">
+            {isAvailable ? (
+              <Badge tone="success">
+                <Icon name="check" size="xs" strokeWidth={2.5} />
+                In stock
+              </Badge>
+            ) : (
+              <Badge tone="danger">
+                <Icon name="alert" size="xs" />
+                Currently unavailable
+              </Badge>
+            )}
+          </div>
+
+          {product.description && (
+            <div className="mt-6 border-t border-slate-200 pt-6">
+              <h2 className="text-sm font-semibold text-slate-900">Description</h2>
+              <p className="mt-2 leading-relaxed text-slate-600">{product.description}</p>
             </div>
           )}
 
-          {addState === 'added' && (
-            <p className="text-sm text-green-600" role="status">
-              Added to cart.
-            </p>
+          {isAvailable && (
+            <div className="mt-8 rounded-card border border-slate-200 bg-white p-4 shadow-card sm:p-5">
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-xs font-medium text-slate-500">Quantity</span>
+                  <div className="flex h-11 items-center rounded-control border border-slate-300 bg-white">
+                    <button
+                      type="button"
+                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                      className="flex h-full w-11 items-center justify-center rounded-l-control text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+                      aria-label="Decrease quantity"
+                    >
+                      <Icon name="minus" size="sm" strokeWidth={2.25} />
+                    </button>
+                    <span
+                      className="w-10 text-center text-sm font-semibold tabular-nums text-slate-900"
+                      aria-live="polite"
+                    >
+                      {quantity}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setQuantity((q) => q + 1)}
+                      className="flex h-full w-11 items-center justify-center rounded-r-control text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+                      aria-label="Increase quantity"
+                    >
+                      <Icon name="plus" size="sm" strokeWidth={2.25} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex-1 self-end">
+                  <Button
+                    size="lg"
+                    fullWidth
+                    onClick={handleAddToCart}
+                    loading={addState === 'adding'}
+                    disabled={addState === 'adding'}
+                  >
+                    <Icon name="cart" size="md" />
+                    Add to cart
+                  </Button>
+                </div>
+              </div>
+
+              {addState === 'added' && (
+                <div
+                  className="mt-4 flex animate-fade-in items-center justify-between gap-3 rounded-control border border-emerald-200 bg-emerald-50 px-3 py-2.5"
+                  role="status"
+                >
+                  <span className="flex items-center gap-2 text-sm font-semibold text-emerald-900">
+                    <Icon name="checkCircle" size="sm" className="text-emerald-600" />
+                    Added to cart.
+                  </span>
+                  <Link
+                    to={ROUTES.CART}
+                    className="shrink-0 text-sm font-semibold text-emerald-800 underline-offset-2 hover:underline"
+                  >
+                    View cart
+                  </Link>
+                </div>
+              )}
+              {addState === 'error' && addError && (
+                <p className="mt-4 text-sm font-medium text-red-600" role="alert">
+                  {addError}
+                </p>
+              )}
+            </div>
           )}
-          {addState === 'error' && addError && (
-            <p className="text-sm text-red-600" role="alert">
-              {addError}
-            </p>
-          )}
+
+          <ul className="mt-8 space-y-2.5 border-t border-slate-200 pt-6 text-sm text-slate-600">
+            <li className="flex items-center gap-2.5">
+              <Icon name="shield" size="sm" className="text-brand-600" />
+              Secure payment handled by PayHere
+            </li>
+            <li className="flex items-center gap-2.5">
+              <Icon name="receipt" size="sm" className="text-brand-600" />
+              Order status tracked in your account
+            </li>
+          </ul>
         </div>
       </div>
     </PageWrapper>

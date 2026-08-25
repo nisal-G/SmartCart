@@ -8,7 +8,7 @@ import { CartItem } from './CartItem';
  */
 export function CartList({ items, pendingActions, itemErrors, onIncrease, onDecrease, onRemove }) {
   return (
-    <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white px-4 sm:px-6">
+    <ul className="divide-y divide-slate-200 rounded-card border border-slate-200 bg-white px-4 py-1 shadow-card sm:px-6 sm:py-2">
       {items.map((item) => {
         const productId = item.product.id;
         return (

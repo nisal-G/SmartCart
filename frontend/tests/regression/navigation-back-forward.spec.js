@@ -5,7 +5,12 @@ import { BACKEND_API_URL } from '../e2e-env/constants.cjs';
 customerTest.describe('Back/forward navigation — customer', () => {
   customerTest('Products -> Product Details -> Back returns to the products list', async ({ page }) => {
     await page.goto('/products');
-    await page.getByRole('link', { name: /TEST QA/ }).first().click();
+    // Scoped to an actual product-card link (same locator smoke.spec.js
+    // uses) rather than "the first link whose name contains TEST QA": the
+    // site header now carries category shortcuts, whose names also start
+    // with "TEST QA", and one of those comes first in DOM order. The
+    // intent — click through to a product's details page — is unchanged.
+    await page.locator('a[href^="/products/"]').first().click();
     await expect(page).toHaveURL(/\/products\/[a-f0-9]{24}/);
 
     await page.goBack();

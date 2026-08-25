@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PageWrapper } from '../components/ui/PageWrapper';
-import { Button } from '../components/ui/Button';
-import { Loading } from '../components/common/Loading';
+import { Icon } from '../components/ui/Icon';
+import { HeroSection } from '../components/home/HeroSection';
+import { TrustRow } from '../components/home/TrustRow';
+import { Reveal } from '../components/motion/Reveal';
 import { ProductGrid } from '../components/common/ProductGrid';
+import { ProductGridSkeleton } from '../components/common/skeletons';
 import productService from '../services/productService';
 import categoryService from '../services/categoryService';
 import { ROUTES } from '../constants/routes';
+
+const FEATURED_LIMIT = 8;
 
 /** Shopping homepage: intro, category browsing entry points, and a small recent-products preview. */
 export function Home() {
@@ -25,7 +30,7 @@ export function Home() {
       })
       .catch(() => {});
     productService
-      .getProducts({ limit: 4 })
+      .getProducts({ limit: FEATURED_LIMIT })
       .then((data) => {
         if (!ignore) setFeaturedProducts(data.products);
       })
@@ -40,64 +45,96 @@ export function Home() {
 
   return (
     <PageWrapper>
-      <section className="flex flex-col items-center gap-4 py-8 text-center sm:py-12">
-        <h1 className="text-3xl font-semibold text-slate-900 sm:text-4xl">
-          Welcome to SmartCart
-        </h1>
-        <p className="max-w-xl text-slate-600">
-          Fresh vegetables, fruits, cakes, and biscuits — browse the catalog and build your cart
-          in minutes.
-        </p>
-        <Link to={ROUTES.PRODUCTS}>
-          <Button size="lg">Browse products</Button>
-        </Link>
-      </section>
+      <HeroSection showCategoriesCta={categories.length > 0} />
+      <TrustRow />
 
       {categories.length > 0 && (
-        <section className="py-8">
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">Shop by category</h2>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-            {categories.map((category) => (
-              <Link
-                key={category._id}
-                to={`${ROUTES.PRODUCTS}?category=${category._id}`}
-                className="group flex flex-col items-center gap-2 rounded-lg border border-slate-200 bg-white p-4 text-center shadow-sm transition-shadow hover:shadow-md"
-              >
-                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-slate-100">
-                  {category.image ? (
-                    <img
-                      src={category.image}
-                      alt={category.name}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-lg font-semibold text-slate-400">
-                      {category.name.charAt(0)}
+        <section id="shop-by-category" className="scroll-mt-28 pt-12 sm:pt-16">
+          <Reveal variant="up" className="mb-5 flex items-end justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                Shop by category
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">Jump straight to what you need.</p>
+            </div>
+            <Link
+              to={ROUTES.PRODUCTS}
+              className="hidden shrink-0 items-center gap-1 text-sm font-semibold text-brand-700 transition-colors hover:text-brand-800 sm:inline-flex"
+            >
+              View all
+              <Icon name="chevronRight" size="sm" />
+            </Link>
+          </Reveal>
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fit,minmax(12rem,1fr))] lg:gap-4">
+            {categories.map((category, index) => (
+              <Reveal key={category._id} delay={Math.min(index, 8) * 60} className="h-full">
+                <Link
+                  to={`${ROUTES.PRODUCTS}?category=${category._id}`}
+                  className="group flex h-full flex-col overflow-hidden rounded-card border border-slate-200 bg-white shadow-card transition-[box-shadow,transform,border-color] duration-200 ease-out hover:-translate-y-1 hover:border-brand-200 hover:shadow-card-hover"
+                >
+                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-brand-50">
+                    {category.image ? (
+                      <img
+                        src={category.image}
+                        alt=""
+                        className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div
+                        className="flex h-full w-full items-center justify-center text-2xl font-bold text-brand-300"
+                        aria-hidden="true"
+                      >
+                        {category.name.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-1 items-center justify-between gap-2 p-4">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-slate-900">
+                        {category.name}
+                      </p>
+                      {category.description && (
+                        <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">
+                          {category.description}
+                        </p>
+                      )}
+                    </div>
+                    <span
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-[background-color,color,transform] duration-200 group-hover:translate-x-0.5 group-hover:bg-brand-600 group-hover:text-white"
+                      aria-hidden="true"
+                    >
+                      <Icon name="chevronRight" size="sm" strokeWidth={2} />
                     </span>
-                  )}
-                </div>
-                <span className="text-sm font-medium text-slate-700 group-hover:text-indigo-600">
-                  {category.name}
-                </span>
-              </Link>
+                  </div>
+                </Link>
+              </Reveal>
             ))}
           </div>
         </section>
       )}
 
       {(loadingFeatured || featuredProducts.length > 0) && (
-        <section className="py-8">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-slate-900">Recently added</h2>
+        <section className="pt-12 sm:pt-16">
+          <Reveal variant="up" className="mb-5 flex items-end justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                Recently added
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">The newest items in the catalogue.</p>
+            </div>
             <Link
               to={ROUTES.PRODUCTS}
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+              className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-brand-700 transition-colors hover:text-brand-800"
             >
               View all
+              <Icon name="chevronRight" size="sm" />
             </Link>
-          </div>
+          </Reveal>
+
           {loadingFeatured ? (
-            <Loading label="Loading products…" />
+            <ProductGridSkeleton count={FEATURED_LIMIT} />
           ) : (
             <ProductGrid products={featuredProducts} />
           )}

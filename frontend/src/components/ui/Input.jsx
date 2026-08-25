@@ -1,35 +1,41 @@
 import { useId } from 'react';
 import { classNames } from '../../utils/classNames';
+import { Field } from './Field';
+import { CONTROL_CLASSES, CONTROL_TONE } from './fieldStyles';
+import { Icon } from './Icon';
 
-/** Labeled text input with a consistent, mobile-friendly touch target and optional error text. */
-export function Input({ label, error, id, className, ...props }) {
+/** Labeled text input with a consistent, mobile-friendly touch target and optional error/hint text. */
+export function Input({ label, error, hint, id, className, icon, ...props }) {
   const generatedId = useId();
   const inputId = id || generatedId;
 
+  const input = (
+    <input
+      id={inputId}
+      className={classNames(
+        CONTROL_CLASSES,
+        error ? CONTROL_TONE.error : CONTROL_TONE.normal,
+        icon && 'pl-9',
+        className
+      )}
+      aria-invalid={Boolean(error)}
+      aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
+      {...props}
+    />
+  );
+
   return (
-    <div className="flex flex-col gap-1">
-      {label && (
-        <label htmlFor={inputId} className="text-sm font-medium text-slate-700">
-          {label}
-        </label>
+    <Field label={label} htmlFor={inputId} error={error} hint={hint}>
+      {icon ? (
+        <div className="relative">
+          <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
+            <Icon name={icon} size="sm" />
+          </span>
+          {input}
+        </div>
+      ) : (
+        input
       )}
-      <input
-        id={inputId}
-        className={classNames(
-          'w-full rounded-md border px-3 py-2 text-base text-slate-900 shadow-sm',
-          'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500',
-          error ? 'border-red-400' : 'border-slate-300',
-          className
-        )}
-        aria-invalid={Boolean(error)}
-        aria-describedby={error ? `${inputId}-error` : undefined}
-        {...props}
-      />
-      {error && (
-        <p id={`${inputId}-error`} className="text-sm text-red-600">
-          {error}
-        </p>
-      )}
-    </div>
+    </Field>
   );
 }
