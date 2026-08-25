@@ -4,6 +4,7 @@ import { Loading } from '../../components/common/Loading';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import productService from '../../services/productService';
 import categoryService from '../../services/categoryService';
+import orderService from '../../services/orderService';
 import { ROUTES } from '../../constants/routes';
 
 /**
@@ -12,10 +13,16 @@ import { ROUTES } from '../../constants/routes';
  *   - total products: `pagination.total` from GET /products (fetched with
  *     limit=1, since only the count is needed here)
  *   - total categories: the length of GET /categories (it has no pagination)
+ *   - total / pending orders: `pagination.total` from GET /orders/all
+ *     (fetched with limit=1, same trick, once unfiltered and once with
+ *     status=pending — see backend/src/validators/orderValidators.js
+ *     listOrdersValidators for the supported status filter)
  * There is no API support for filtering products by isActive (see
  * backend/src/validators/productValidators.js listProductsValidators), so an
  * active/inactive breakdown isn't shown here rather than being approximated
- * by pulling the whole catalog.
+ * by pulling the whole catalog. Likewise there is no payment-status filter
+ * on GET /orders/all, so a "paid orders" figure isn't shown here either —
+ * computing it would mean fetching every order just to count them.
  */
 export function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -29,14 +36,21 @@ export function AdminDashboard() {
         if (ignore) return undefined;
         setLoading(true);
         setError(null);
-        return Promise.all([productService.getProducts({ limit: 1 }), categoryService.getCategories()]);
+        return Promise.all([
+          productService.getProducts({ limit: 1 }),
+          categoryService.getCategories(),
+          orderService.getAllOrders({ limit: 1 }),
+          orderService.getAllOrders({ limit: 1, status: 'pending' }),
+        ]);
       })
       .then((result) => {
         if (ignore || !result) return;
-        const [productData, categories] = result;
+        const [productData, categories, orderData, pendingOrderData] = result;
         setStats({
           totalProducts: productData.pagination.total,
           totalCategories: categories.length,
+          totalOrders: orderData.pagination.total,
+          pendingOrders: pendingOrderData.pagination.total,
         });
       })
       .catch((err) => {
@@ -59,7 +73,7 @@ export function AdminDashboard() {
       {!loading && error && <ErrorMessage message={error} onRetry={loadStats} />}
 
       {!loading && !error && stats && (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-lg border border-slate-200 bg-white p-6">
             <p className="text-sm font-medium text-slate-500">Total products</p>
             <p className="mt-1 text-3xl font-semibold text-slate-900">{stats.totalProducts}</p>
@@ -79,6 +93,28 @@ export function AdminDashboard() {
               className="mt-4 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-700"
             >
               Manage categories →
+            </Link>
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-white p-6">
+            <p className="text-sm font-medium text-slate-500">Total orders</p>
+            <p className="mt-1 text-3xl font-semibold text-slate-900">{stats.totalOrders}</p>
+            <Link
+              to={ROUTES.ADMIN_ORDERS}
+              className="mt-4 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-700"
+            >
+              Manage orders →
+            </Link>
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-white p-6">
+            <p className="text-sm font-medium text-slate-500">Pending orders</p>
+            <p className="mt-1 text-3xl font-semibold text-slate-900">{stats.pendingOrders}</p>
+            <Link
+              to={`${ROUTES.ADMIN_ORDERS}?status=pending`}
+              className="mt-4 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-700"
+            >
+              View pending orders →
             </Link>
           </div>
         </div>

@@ -19,6 +19,9 @@ import { AdminProducts } from '../pages/admin/AdminProducts';
 import { AdminProductForm } from '../pages/admin/AdminProductForm';
 import { AdminCategories } from '../pages/admin/AdminCategories';
 import { AdminCategoryForm } from '../pages/admin/AdminCategoryForm';
+import { AdminOrders } from '../pages/admin/AdminOrders';
+import { AdminOrderDetails } from '../pages/admin/AdminOrderDetails';
+import { AdminUsers } from '../pages/admin/AdminUsers';
 import { NotFound } from '../pages/NotFound';
 
 /**
@@ -59,6 +62,9 @@ export function AppRoutes() {
             <Route path="categories" element={<AdminCategories />} />
             <Route path="categories/new" element={<AdminCategoryForm />} />
             <Route path="categories/:id/edit" element={<AdminCategoryForm />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="orders/:id" element={<AdminOrderDetails />} />
+            <Route path="users" element={<AdminUsers />} />
           </Route>
         </Route>
 
