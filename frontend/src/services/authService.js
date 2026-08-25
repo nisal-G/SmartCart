@@ -20,9 +20,10 @@ const authService = {
   },
 
   // --- Passkey / WebAuthn -------------------------------------------------
-  // Ceremony option/verify payloads are handed as-is to/from
-  // @simplewebauthn/browser once the passkey UI is built (not yet a
-  // dependency of this foundation branch).
+  // These are the raw option/verify endpoints only — the actual
+  // navigator.credentials.create()/get() ceremony (via
+  // @simplewebauthn/browser) is orchestrated in AuthContext
+  // (registerPasskey/loginWithPasskey), which calls these in sequence.
   passkeyRegisterOptions(payload) {
     return api.post('/auth/passkey/register/options', payload).then((res) => res.data);
   },
