@@ -29,7 +29,7 @@ function isMobileViewport(page) {
 customerTest.describe('Responsive — customer pages', () => {
   customerTest('Home', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Welcome to SmartCart' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /Fresh groceries/ })).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });
 

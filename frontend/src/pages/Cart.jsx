@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PageWrapper } from '../components/ui/PageWrapper';
+import { PageHeader } from '../components/ui/PageHeader';
 import { Button } from '../components/ui/Button';
-import { Loading } from '../components/common/Loading';
+import { Icon } from '../components/ui/Icon';
+import { Skeleton } from '../components/ui/Skeleton';
 import { ErrorMessage } from '../components/common/ErrorMessage';
 import { EmptyState } from '../components/common/EmptyState';
 import { CartList } from '../components/common/CartList';
@@ -20,7 +22,8 @@ import { ROUTES } from '../constants/routes';
  * that item, leaving the rest of the cart usable.
  */
 export function Cart() {
-  const { cart, itemCount, loading, error, loadCart, updateItemQuantity, removeItem, clearCart } = useCart();
+  const { cart, itemCount, loading, error, loadCart, updateItemQuantity, removeItem, clearCart } =
+    useCart();
 
   // productId -> 'update' | 'remove', for whichever item currently has an
   // in-flight request.
@@ -118,7 +121,25 @@ export function Cart() {
   if (loading) {
     return (
       <PageWrapper>
-        <Loading label="Loading your cart…" />
+        <PageHeader title="Your cart" />
+        <div className="grid gap-8 lg:grid-cols-3" aria-hidden="true">
+          <div className="space-y-4 lg:col-span-2">
+            {[0, 1].map((row) => (
+              <div
+                key={row}
+                className="flex items-center gap-4 rounded-card border border-slate-200 bg-white p-5 shadow-card"
+              >
+                <Skeleton className="h-20 w-20 shrink-0 rounded-card" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-2/5" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+                <Skeleton className="h-10 w-28 rounded-control" />
+              </div>
+            ))}
+          </div>
+          <Skeleton className="h-72 w-full rounded-card" />
+        </div>
       </PageWrapper>
     );
   }
@@ -126,6 +147,7 @@ export function Cart() {
   if (error) {
     return (
       <PageWrapper>
+        <PageHeader title="Your cart" />
         <ErrorMessage message={error} onRetry={loadCart} />
       </PageWrapper>
     );
@@ -134,13 +156,17 @@ export function Cart() {
   if (cart.items.length === 0) {
     return (
       <PageWrapper>
-        <h1 className="mb-6 text-2xl font-semibold text-slate-900">Your cart</h1>
+        <PageHeader title="Your cart" />
         <EmptyState
+          icon="cart"
           title="Your cart is empty"
-          description="Browse our products and add something you like."
+          description="Browse the catalogue and add something you like — your cart is saved to your account."
           action={
             <Link to={ROUTES.PRODUCTS}>
-              <Button>Continue shopping</Button>
+              <Button size="lg">
+                Continue shopping
+                <Icon name="arrowRight" size="sm" />
+              </Button>
             </Link>
           }
         />
@@ -150,12 +176,15 @@ export function Cart() {
 
   return (
     <PageWrapper>
-      <h1 className="mb-6 text-2xl font-semibold text-slate-900">Your cart</h1>
+      <PageHeader
+        title="Your cart"
+        description={`${itemCount} ${itemCount === 1 ? 'item' : 'items'} ready for checkout.`}
+      />
 
       <div className="grid gap-8 lg:grid-cols-3">
         {/* min-w-0: without it, this grid item's default min-width:auto lets
             a long product name's intrinsic (nowrap) text width bubble up
-            through the grid track, defeating CartItem's own `truncate` and
+            through the grid track, defeating CartItem's own clamping and
             overflowing narrow viewports horizontally — see the regression
             test in responsive/responsive.spec.js. */}
         <div className="min-w-0 lg:col-span-2">
@@ -168,12 +197,9 @@ export function Cart() {
             onRemove={handleRemove}
           />
 
-          <Link
-            to={ROUTES.PRODUCTS}
-            className="mt-4 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-700"
-          >
-            ← Continue shopping
-          </Link>
+          {/* The "Continue shopping" CTA lives in CartSummary only — one
+              per page, so the two don't compete on mobile where the
+              summary stacks directly under this list. */}
         </div>
 
         <div className="lg:col-span-1">

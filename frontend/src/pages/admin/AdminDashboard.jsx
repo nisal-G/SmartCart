@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loading } from '../../components/common/Loading';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
+import { Icon } from '../../components/ui/Icon';
+import { Skeleton } from '../../components/ui/Skeleton';
 import productService from '../../services/productService';
 import categoryService from '../../services/categoryService';
 import orderService from '../../services/orderService';
@@ -24,6 +25,39 @@ import { ROUTES } from '../../constants/routes';
  * on GET /orders/all, so a "paid orders" figure isn't shown here either —
  * computing it would mean fetching every order just to count them.
  */
+
+/**
+ * One metric tile. The label and value are deliberately direct siblings
+ * inside this card — admin-dashboard.spec.js walks from the label to its
+ * parent to read the matching value, so don't nest one of them deeper.
+ */
+function StatCard({ label, value, icon, to, linkLabel }) {
+  return (
+    <div className="rounded-card border border-slate-200 bg-white p-5 shadow-card transition-shadow duration-200 hover:shadow-card-hover">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-slate-500">{label}</p>
+          <p className="mt-1 text-3xl font-extrabold tabular-nums tracking-tight text-slate-900">
+            {value}
+          </p>
+        </div>
+        <span
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-slate-50 text-slate-500"
+          aria-hidden="true"
+        >
+          <Icon name={icon} size="md" />
+        </span>
+      </div>
+      <Link
+        to={to}
+        className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-brand-700 transition-colors hover:text-brand-800"
+      >
+        {linkLabel}
+      </Link>
+    </div>
+  );
+}
+
 export function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -68,56 +102,88 @@ export function AdminDashboard() {
 
   return (
     <div>
-      {loading && <Loading label="Loading dashboard…" />}
+      <h2 className="sr-only">Dashboard</h2>
+
+      {loading && (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-hidden="true">
+          {[0, 1, 2, 3].map((index) => (
+            <div key={index} className="rounded-card border border-slate-200 bg-white p-5 shadow-card">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="mt-3 h-9 w-16" />
+              <Skeleton className="mt-4 h-4 w-32" />
+            </div>
+          ))}
+        </div>
+      )}
 
       {!loading && error && <ErrorMessage message={error} onRetry={loadStats} />}
 
       {!loading && !error && stats && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-lg border border-slate-200 bg-white p-6">
-            <p className="text-sm font-medium text-slate-500">Total products</p>
-            <p className="mt-1 text-3xl font-semibold text-slate-900">{stats.totalProducts}</p>
-            <Link
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard
+              label="Total products"
+              value={stats.totalProducts}
+              icon="package"
               to={ROUTES.ADMIN_PRODUCTS}
-              className="mt-4 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-700"
-            >
-              Manage products →
-            </Link>
-          </div>
-
-          <div className="rounded-lg border border-slate-200 bg-white p-6">
-            <p className="text-sm font-medium text-slate-500">Total categories</p>
-            <p className="mt-1 text-3xl font-semibold text-slate-900">{stats.totalCategories}</p>
-            <Link
+              linkLabel="Manage products →"
+            />
+            <StatCard
+              label="Total categories"
+              value={stats.totalCategories}
+              icon="tag"
               to={ROUTES.ADMIN_CATEGORIES}
-              className="mt-4 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-700"
-            >
-              Manage categories →
-            </Link>
-          </div>
-
-          <div className="rounded-lg border border-slate-200 bg-white p-6">
-            <p className="text-sm font-medium text-slate-500">Total orders</p>
-            <p className="mt-1 text-3xl font-semibold text-slate-900">{stats.totalOrders}</p>
-            <Link
+              linkLabel="Manage categories →"
+            />
+            <StatCard
+              label="Total orders"
+              value={stats.totalOrders}
+              icon="receipt"
               to={ROUTES.ADMIN_ORDERS}
-              className="mt-4 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-700"
-            >
-              Manage orders →
-            </Link>
+              linkLabel="Manage orders →"
+            />
+            <StatCard
+              label="Pending orders"
+              value={stats.pendingOrders}
+              icon="info"
+              to={`${ROUTES.ADMIN_ORDERS}?status=pending`}
+              linkLabel="View pending orders →"
+            />
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white p-6">
-            <p className="text-sm font-medium text-slate-500">Pending orders</p>
-            <p className="mt-1 text-3xl font-semibold text-slate-900">{stats.pendingOrders}</p>
-            <Link
-              to={`${ROUTES.ADMIN_ORDERS}?status=pending`}
-              className="mt-4 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-700"
-            >
-              View pending orders →
-            </Link>
+          <div className="mt-6 rounded-card border border-slate-200 bg-white p-5 shadow-card sm:p-6">
+            <h3 className="text-base font-semibold text-slate-900">Quick actions</h3>
+            <p className="mt-1 text-sm text-slate-500">
+              Jump straight into the tasks you run most often.
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <Link
+                to={ROUTES.ADMIN_PRODUCT_NEW}
+                className="flex items-center gap-3 rounded-control border border-slate-200 p-3 transition-colors hover:border-slate-300 hover:bg-slate-50"
+              >
+                <span
+                  className="flex h-9 w-9 items-center justify-center rounded-control bg-brand-50 text-brand-700"
+                  aria-hidden="true"
+                >
+                  <Icon name="plus" size="md" />
+                </span>
+                <span className="text-sm font-semibold text-slate-800">Add a new product</span>
+              </Link>
+              <Link
+                to={ROUTES.ADMIN_CATEGORY_NEW}
+                className="flex items-center gap-3 rounded-control border border-slate-200 p-3 transition-colors hover:border-slate-300 hover:bg-slate-50"
+              >
+                <span
+                  className="flex h-9 w-9 items-center justify-center rounded-control bg-brand-50 text-brand-700"
+                  aria-hidden="true"
+                >
+                  <Icon name="plus" size="md" />
+                </span>
+                <span className="text-sm font-semibold text-slate-800">Add a new category</span>
+              </Link>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

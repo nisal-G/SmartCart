@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { PageWrapper } from '../components/ui/PageWrapper';
+import { PageHeader } from '../components/ui/PageHeader';
 import { Button } from '../components/ui/Button';
-import { Loading } from '../components/common/Loading';
+import { Icon } from '../components/ui/Icon';
 import { ErrorMessage } from '../components/common/ErrorMessage';
 import { EmptyState } from '../components/common/EmptyState';
 import { OrderList } from '../components/common/OrderList';
+import { CardListSkeleton } from '../components/common/skeletons';
+import { Pagination } from '../components/common/Pagination';
 import orderService from '../services/orderService';
 import { ROUTES } from '../constants/routes';
 
@@ -57,11 +60,18 @@ export function Orders() {
     setSearchParams(nextPage > 1 ? { page: String(nextPage) } : {});
   }
 
+  const header = (
+    <PageHeader
+      title="Your orders"
+      description="Every order you've placed, with its fulfilment and payment status."
+    />
+  );
+
   if (loading) {
     return (
       <PageWrapper>
-        <h1 className="mb-6 text-2xl font-semibold text-slate-900">Your orders</h1>
-        <Loading label="Loading your orders…" />
+        {header}
+        <CardListSkeleton count={3} />
       </PageWrapper>
     );
   }
@@ -69,7 +79,7 @@ export function Orders() {
   if (error) {
     return (
       <PageWrapper>
-        <h1 className="mb-6 text-2xl font-semibold text-slate-900">Your orders</h1>
+        {header}
         <ErrorMessage message={error} onRetry={fetchOrders} />
       </PageWrapper>
     );
@@ -78,13 +88,17 @@ export function Orders() {
   if (orders.length === 0) {
     return (
       <PageWrapper>
-        <h1 className="mb-6 text-2xl font-semibold text-slate-900">Your orders</h1>
+        {header}
         <EmptyState
+          icon="receipt"
           title="You haven't placed any orders yet."
-          description="Once you place an order, it will show up here."
+          description="Once you place an order, it will show up here with its status and total."
           action={
             <Link to={ROUTES.PRODUCTS}>
-              <Button>Continue shopping</Button>
+              <Button size="lg">
+                Continue shopping
+                <Icon name="arrowRight" size="sm" />
+              </Button>
             </Link>
           }
         />
@@ -94,33 +108,9 @@ export function Orders() {
 
   return (
     <PageWrapper>
-      <h1 className="mb-6 text-2xl font-semibold text-slate-900">Your orders</h1>
-
+      {header}
       <OrderList orders={orders} />
-
-      {pagination && pagination.totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between gap-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => goToPage(page - 1)}
-            disabled={page <= 1}
-          >
-            Previous
-          </Button>
-          <p className="text-sm text-slate-500">
-            Page {pagination.page} of {pagination.totalPages}
-          </p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => goToPage(page + 1)}
-            disabled={page >= pagination.totalPages}
-          >
-            Next
-          </Button>
-        </div>
-      )}
+      <Pagination pagination={pagination} onPageChange={goToPage} />
     </PageWrapper>
   );
 }

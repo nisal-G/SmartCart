@@ -1,3 +1,4 @@
+import { Icon } from '../ui/Icon';
 import { formatCurrency } from '../../utils/formatCurrency';
 
 /**
@@ -12,17 +13,20 @@ export function OrderItem({ item }) {
   const subtotal = price * quantity;
 
   return (
-    <li className="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
-      <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-md bg-slate-100 text-xs text-slate-400">
-        No image
-      </div>
+    <li className="flex items-center gap-4 py-4">
+      <span
+        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-card bg-slate-100 text-slate-300 ring-1 ring-slate-200/70"
+        aria-hidden="true"
+      >
+        <Icon name="package" size="md" strokeWidth={1.5} />
+      </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-slate-900">{name}</p>
-        <p className="text-sm text-slate-500">
+        <p className="truncate text-sm font-semibold text-slate-900">{name}</p>
+        <p className="mt-0.5 text-sm text-slate-500">
           {formatCurrency(price)} × {quantity}
         </p>
       </div>
-      <span className="shrink-0 text-sm font-semibold text-slate-900">
+      <span className="shrink-0 text-sm font-bold tabular-nums text-slate-900">
         {formatCurrency(subtotal)}
       </span>
     </li>
