@@ -19,6 +19,27 @@ const api = axios.create({
   },
 });
 
+// A FormData body (product/category image upload — see productService/
+// categoryService createProduct/updateProduct/createCategory/updateCategory)
+// must never carry this instance's default 'Content-Type: application/json'
+// header. If it does, axios's own transformRequest sees a JSON content type
+// already set and JSON.stringifies the FormData instead of sending it as
+// multipart/form-data (turning the File entry into "{}" and silently
+// breaking the upload — see backend/src/middleware/upload.js, which never
+// even sees a file). Removing the header here lets axios send the FormData
+// as-is and the browser set the correct 'multipart/form-data; boundary=...'
+// header itself.
+api.interceptors.request.use((config) => {
+  if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+    if (config.headers?.delete) {
+      config.headers.delete('Content-Type');
+    } else if (config.headers) {
+      delete config.headers['Content-Type'];
+    }
+  }
+  return config;
+});
+
 // --- Session-expiry notification -------------------------------------
 // api.js must not import AuthContext directly (that would be a circular
 // dependency: context -> services -> context). Instead it exposes a tiny
