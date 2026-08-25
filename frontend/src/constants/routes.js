@@ -23,6 +23,9 @@ export const ROUTES = {
   ADMIN_CATEGORIES: '/admin/categories',
   ADMIN_CATEGORY_NEW: '/admin/categories/new',
   ADMIN_CATEGORY_EDIT: '/admin/categories/:id/edit',
+  ADMIN_ORDERS: '/admin/orders',
+  ADMIN_ORDER_DETAILS: '/admin/orders/:id',
+  ADMIN_USERS: '/admin/users',
 };
 
 /** Builds a concrete product details path from a product id. */
@@ -43,4 +46,9 @@ export function adminProductEditPath(id) {
 /** Builds a concrete admin "edit category" path from a category id. */
 export function adminCategoryEditPath(id) {
   return `/admin/categories/${id}/edit`;
+}
+
+/** Builds a concrete admin order details path from an order id. */
+export function adminOrderDetailsPath(id) {
+  return `/admin/orders/${id}`;
 }
