@@ -11,6 +11,10 @@ export const ROUTES = {
   CART: '/cart',
   CHECKOUT: '/checkout',
   ORDERS: '/orders',
+  // Must match backend .env PAYHERE_RETURN_URL / PAYHERE_CANCEL_URL exactly
+  // — PayHere redirects the shopper's browser to these verbatim.
+  PAYMENT_RETURN: '/payment/return',
+  PAYMENT_CANCEL: '/payment/cancel',
   ADMIN: '/admin',
 };
 
