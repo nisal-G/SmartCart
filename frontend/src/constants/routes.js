@@ -11,6 +11,7 @@ export const ROUTES = {
   CART: '/cart',
   CHECKOUT: '/checkout',
   ORDERS: '/orders',
+  ORDER_DETAILS: '/orders/:id',
   // Must match backend .env PAYHERE_RETURN_URL / PAYHERE_CANCEL_URL exactly
   // — PayHere redirects the shopper's browser to these verbatim.
   PAYMENT_RETURN: '/payment/return',
@@ -21,4 +22,9 @@ export const ROUTES = {
 /** Builds a concrete product details path from a product id. */
 export function productDetailsPath(id) {
   return `/products/${id}`;
+}
+
+/** Builds a concrete order details path from an order id. */
+export function orderDetailsPath(id) {
+  return `/orders/${id}`;
 }
