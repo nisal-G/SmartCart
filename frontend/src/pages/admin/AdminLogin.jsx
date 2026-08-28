@@ -8,6 +8,15 @@ import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { useAuth } from '../../hooks/useAuth';
 import { ROUTES } from '../../constants/routes';
 
+// Three short, honest claims about what the admin console actually does —
+// no invented metrics, just a plain-language recap of the sections behind
+// AdminNav (Catalog / Operations).
+const HIGHLIGHTS = [
+  { icon: 'package', text: 'Manage your product catalogue and categories' },
+  { icon: 'receipt', text: 'Track orders and update fulfilment status' },
+  { icon: 'users', text: 'Review customer accounts and access' },
+];
+
 /**
  * Dedicated sign-in page for SmartCart staff/administrators. Deliberately
  * separate from the shopper-facing Login page (pages/Login.jsx) — customers
@@ -45,31 +54,82 @@ export function AdminLogin() {
   }
 
   return (
-    <PageWrapper className="flex items-center">
-      <div className="mx-auto w-full max-w-md py-6 sm:py-10">
-        <div className="flex flex-col items-center text-center">
-          <Link to={ROUTES.HOME} className="flex items-center gap-2.5">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-xs">
-              <Icon name="cart" size="lg" strokeWidth={2} />
+    <PageWrapper className="flex items-center py-6 sm:py-10">
+      <div className="mx-auto grid w-full max-w-4xl overflow-hidden rounded-panel border border-slate-200 bg-white shadow-panel lg:grid-cols-2">
+        {/* Brand panel — decorative context only, hidden below lg so the
+            form is what a narrow viewport sees first. */}
+        <div className="relative hidden flex-col justify-between overflow-hidden bg-linear-to-br from-brand-600 via-brand-700 to-slate-900 p-10 text-white lg:flex">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-3xl"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-brand-400/20 blur-3xl"
+          />
+
+          <Link to={ROUTES.HOME} className="relative flex items-center gap-2.5">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm">
+              <Icon name="cart" size="md" strokeWidth={2} />
             </span>
-            <span className="text-xl font-extrabold tracking-tight text-slate-900">
-              Smart<span className="text-brand-600">Cart</span>
+            <span className="text-lg font-extrabold tracking-tight">
+              Smart<span className="text-brand-200">Cart</span>
             </span>
           </Link>
-          <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
-            <Icon name="shield" size="xs" />
-            Admin portal
-          </span>
-          <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900">
-            Staff sign in
-          </h1>
-          <p className="mt-2 text-sm text-slate-600">
+
+          <div className="relative">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider backdrop-blur-sm">
+              <Icon name="shield" size="xs" />
+              Admin portal
+            </span>
+            <p className="mt-4 text-2xl font-bold leading-snug tracking-tight">
+              Everything your store needs, in one console.
+            </p>
+            <ul className="mt-6 flex flex-col gap-3.5">
+              {HIGHLIGHTS.map((item) => (
+                <li key={item.text} className="flex items-center gap-3 text-sm text-brand-50/90">
+                  <span
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control bg-white/10"
+                    aria-hidden="true"
+                  >
+                    <Icon name={item.icon} size="sm" />
+                  </span>
+                  {item.text}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <p className="relative text-xs text-brand-100/70">
             Restricted to authorized SmartCart administrators.
           </p>
         </div>
 
-        <div className="mt-8 rounded-panel border border-slate-200 bg-white p-6 shadow-card sm:p-8">
-          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+        {/* Form panel */}
+        <div className="flex flex-col justify-center p-6 sm:p-10">
+          <div className="flex flex-col items-center text-center lg:hidden">
+            <Link to={ROUTES.HOME} className="flex items-center gap-2.5">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-xs">
+                <Icon name="cart" size="lg" strokeWidth={2} />
+              </span>
+              <span className="text-xl font-extrabold tracking-tight text-slate-900">
+                Smart<span className="text-brand-600">Cart</span>
+              </span>
+            </Link>
+            <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <Icon name="shield" size="xs" />
+              Admin portal
+            </span>
+          </div>
+
+          <div className="mt-6 text-center lg:mt-0 lg:text-left">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Staff sign in</h1>
+            <p className="mt-2 text-sm text-slate-600">
+              Restricted to authorized SmartCart administrators.
+            </p>
+          </div>
+
+          <form className="mt-8 flex flex-col gap-4" onSubmit={handleSubmit}>
             {error && <ErrorMessage message={error} />}
             <Input
               type="email"
@@ -93,14 +153,14 @@ export function AdminLogin() {
               Log in
             </Button>
           </form>
-        </div>
 
-        <p className="mt-6 text-center text-xs leading-relaxed text-slate-500">
-          Shopping instead?{' '}
-          <Link to={ROUTES.LOGIN} className="font-semibold text-brand-700 hover:text-brand-800">
-            Go to customer sign in
-          </Link>
-        </p>
+          <p className="mt-6 text-center text-xs leading-relaxed text-slate-500 lg:text-left">
+            Shopping instead?{' '}
+            <Link to={ROUTES.LOGIN} className="font-semibold text-brand-700 hover:text-brand-800">
+              Go to customer sign in
+            </Link>
+          </p>
+        </div>
       </div>
     </PageWrapper>
   );
