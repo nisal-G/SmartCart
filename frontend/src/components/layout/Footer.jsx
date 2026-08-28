@@ -22,7 +22,9 @@ export function Footer() {
   // The admin console gets a single-line footer instead of the storefront's
   // shop/account columns — those links belong to the shopper experience and
   // read as clutter (and as the wrong context) inside the admin area.
-  if (location.pathname.startsWith(ROUTES.ADMIN)) {
+  // /admin/login is excluded: it's a public sign-in page (linked to from
+  // the "Admin Portal" link below), not the authenticated console itself.
+  if (location.pathname.startsWith(ROUTES.ADMIN) && location.pathname !== ROUTES.ADMIN_LOGIN) {
     return (
       <footer className="mt-auto border-t border-slate-200 bg-white">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-6 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
@@ -96,6 +98,21 @@ export function Footer() {
                   </Link>
                 </li>
               ))}
+              {/*
+                Discreet staff/admin entry point. Deliberately styled a
+                notch smaller and quieter than the shopper links above it —
+                this is a navigation convenience, not a security boundary
+                (admin routes are enforced by ProtectedRoute + backend
+                authorization regardless of whether this link is visible).
+              */}
+              <li className="pt-1">
+                <Link
+                  to={ROUTES.ADMIN_LOGIN}
+                  className="text-xs text-slate-400 transition-colors hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 rounded-sm"
+                >
+                  Admin Portal
+                </Link>
+              </li>
             </ul>
           </nav>
         </div>

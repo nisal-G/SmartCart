@@ -169,7 +169,11 @@ export function Navbar() {
 
   // The admin area gets a deliberately quieter header — no storefront
   // search or category strip — so it never reads as the shop itself.
-  const isAdminArea = location.pathname.startsWith(ROUTES.ADMIN);
+  // /admin/login is a public sign-in page, not the authenticated admin
+  // console — it keeps the normal storefront header (see MainLayout.jsx /
+  // Footer.jsx for the same exclusion).
+  const isAdminArea =
+    location.pathname.startsWith(ROUTES.ADMIN) && location.pathname !== ROUTES.ADMIN_LOGIN;
 
   // Non-critical: if categories fail to load the strip simply doesn't render.
   useEffect(() => {

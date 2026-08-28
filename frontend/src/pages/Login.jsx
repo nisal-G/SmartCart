@@ -31,48 +31,20 @@ const PASSKEY_PANEL = {
   REGISTER: 'register',
 };
 
-/** Thin horizontal rule with a centred caption. */
-function Divider({ children }) {
-  return (
-    <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
-      <span className="h-px flex-1 bg-slate-200" />
-      {children}
-      <span className="h-px flex-1 bg-slate-200" />
-    </div>
-  );
-}
-
 /**
  * Login screen wired to the real auth foundation: Google/Facebook trigger a
- * full-page OAuth redirect (see authService), Passkey drives the
- * @simplewebauthn/browser ceremony via AuthContext, and the email/password
- * form only ever authenticates admin accounts (SRS §3.1 — shoppers use
- * Google/Facebook/Passkey only).
+ * full-page OAuth redirect (see authService), and Passkey drives the
+ * @simplewebauthn/browser ceremony via AuthContext. This page is
+ * shopper-only (SRS §3.1 — shoppers use Google/Facebook/Passkey only);
+ * administrator email/password sign-in lives on its own dedicated route
+ * (see pages/admin/AdminLogin.jsx), reachable from the site footer rather
+ * than from here.
  */
 export function Login() {
-  const { loginWithGoogle, loginWithFacebook, adminLogin, loginWithPasskey, registerPasskey } =
-    useAuth();
+  const { loginWithGoogle, loginWithFacebook, loginWithPasskey, registerPasskey } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const redirectTo = location.state?.from?.pathname || ROUTES.HOME;
-
-  const [form, setForm] = useState({ email: '', password: '' });
-  const [error, setError] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-
-  async function handleAdminLogin(event) {
-    event.preventDefault();
-    setError(null);
-    setSubmitting(true);
-    try {
-      await adminLogin(form);
-      navigate(redirectTo, { replace: true });
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
-  }
 
   // browserSupportsWebAuthn() just checks for navigator.credentials —
   // constant for the life of the page, so this doesn't need to live in state.
@@ -230,40 +202,10 @@ export function Login() {
               </form>
             )}
           </div>
-
-          <div className="my-6">
-            <Divider>Admin login</Divider>
-          </div>
-
-          <form className="flex flex-col gap-4" onSubmit={handleAdminLogin}>
-            {error && <ErrorMessage message={error} />}
-            <Input
-              type="email"
-              label="Email"
-              required
-              autoComplete="email"
-              placeholder="admin@smartcart.example"
-              value={form.email}
-              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-            />
-            <Input
-              type="password"
-              label="Password"
-              required
-              autoComplete="current-password"
-              placeholder="••••••••"
-              value={form.password}
-              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-            />
-            <Button type="submit" size="lg" fullWidth loading={submitting}>
-              Log in
-            </Button>
-          </form>
         </div>
 
         <p className="mt-6 text-center text-xs leading-relaxed text-slate-500">
-          Shoppers sign in with Google, Facebook or a passkey. The email and password form is for
-          SmartCart administrators.
+          By continuing you agree to SmartCart&apos;s terms and privacy policy.
         </p>
       </div>
     </PageWrapper>
