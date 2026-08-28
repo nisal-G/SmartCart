@@ -10,13 +10,12 @@ import { Skeleton } from '../ui/Skeleton';
 /** One product tile's silhouette — same aspect ratio and padding as ProductCard. */
 export function ProductCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-card border border-slate-200 bg-white shadow-card">
+    <div className="overflow-hidden rounded-card border border-slate-200/80 bg-white shadow-card">
       <Skeleton className="aspect-square w-full rounded-none" />
       <div className="space-y-2.5 p-4">
-        <Skeleton className="h-3 w-16" />
         <Skeleton className="h-4 w-3/4" />
         <Skeleton className="h-3 w-full" />
-        <div className="flex items-center justify-between pt-2">
+        <div className="flex items-center justify-between border-t border-slate-100 pt-3">
           <Skeleton className="h-5 w-20" />
           <Skeleton className="h-9 w-9 rounded-full" />
         </div>
@@ -43,10 +42,10 @@ export function ProductGridSkeleton({ count = 8 }) {
 export function TableSkeleton({ rows = 5, columns = 5 }) {
   return (
     <div
-      className="overflow-hidden rounded-card border border-slate-200 bg-white shadow-card"
+      className="overflow-hidden rounded-card border border-slate-200/80 bg-white shadow-card"
       aria-hidden="true"
     >
-      <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
+      <div className="border-b border-slate-200 bg-sunken px-4 py-3.5">
         <Skeleton className="h-3 w-32" />
       </div>
       <div className="divide-y divide-slate-100">
@@ -71,7 +70,10 @@ export function CardListSkeleton({ count = 3 }) {
   return (
     <div className="space-y-4" aria-hidden="true">
       {Array.from({ length: count }, (_, index) => (
-        <div key={index} className="rounded-card border border-slate-200 bg-white p-5 shadow-card">
+        <div
+          key={index}
+          className="rounded-card border border-slate-200/80 bg-white p-5 shadow-card"
+        >
           <div className="flex items-center justify-between gap-4">
             <Skeleton className="h-4 w-28" />
             <Skeleton className="h-6 w-20 rounded-full" />

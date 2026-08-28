@@ -55,7 +55,7 @@ export function AdminLogin() {
 
   return (
     <PageWrapper className="flex items-center py-6 sm:py-10">
-      <div className="mx-auto grid w-full max-w-4xl overflow-hidden rounded-panel border border-slate-200 bg-white shadow-panel lg:grid-cols-2">
+      <div className="mx-auto grid w-full max-w-4xl overflow-hidden rounded-panel border border-slate-200/80 bg-white shadow-panel lg:grid-cols-2">
         {/* Brand panel — decorative context only, hidden below lg so the
             form is what a narrow viewport sees first. */}
         <div className="relative hidden flex-col justify-between overflow-hidden bg-linear-to-br from-brand-600 via-brand-700 to-slate-900 p-10 text-white lg:flex">
@@ -109,7 +109,7 @@ export function AdminLogin() {
         <div className="flex flex-col justify-center p-6 sm:p-10">
           <div className="flex flex-col items-center text-center lg:hidden">
             <Link to={ROUTES.HOME} className="flex items-center gap-2.5">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-xs">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-brand-500 to-brand-700 text-white shadow-brand">
                 <Icon name="cart" size="lg" strokeWidth={2} />
               </span>
               <span className="text-xl font-extrabold tracking-tight text-slate-900">

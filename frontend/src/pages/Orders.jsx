@@ -62,6 +62,7 @@ export function Orders() {
 
   const header = (
     <PageHeader
+      eyebrow="Account"
       title="Your orders"
       description="Every order you've placed, with its fulfilment and payment status."
     />

@@ -23,17 +23,17 @@ export function OrderCard({ order }) {
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <li className="overflow-hidden rounded-card border border-slate-200 bg-white shadow-card transition-[box-shadow,border-color] duration-200 hover:border-slate-300 hover:shadow-card-hover">
-      <div className="flex flex-col gap-4 border-b border-slate-100 bg-slate-50/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <div className="flex min-w-0 items-center gap-3">
+    <li className="group overflow-hidden rounded-card border border-slate-200/80 bg-white shadow-card transition-[box-shadow,border-color,transform] duration-300 ease-entrance hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-lift">
+      <div className="flex flex-col gap-4 border-b border-slate-100 bg-sunken/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div className="flex min-w-0 items-center gap-3.5">
           <span
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control bg-white text-slate-500 ring-1 ring-slate-200"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-white text-brand-600 shadow-xs ring-1 ring-slate-200 transition-colors duration-300 group-hover:bg-brand-600 group-hover:text-white"
             aria-hidden="true"
           >
             <Icon name="receipt" size="md" />
           </span>
           <div className="min-w-0">
-            <p className="font-mono text-sm font-semibold text-slate-900" title={_id}>
+            <p className="font-mono text-sm font-bold tracking-tight text-slate-900" title={_id}>
               {shortOrderId(_id)}
             </p>
             <p className="mt-0.5 text-xs text-slate-500">{formatDate(createdAt)}</p>
@@ -54,7 +54,9 @@ export function OrderCard({ order }) {
           </div>
           <div className="flex items-center gap-2">
             <dt className="text-slate-500">Total</dt>
-            <dd className="font-semibold tabular-nums text-slate-900">{formatCurrency(total)}</dd>
+            <dd className="font-extrabold tabular-nums tracking-tight text-slate-900">
+              {formatCurrency(total)}
+            </dd>
           </div>
         </dl>
 

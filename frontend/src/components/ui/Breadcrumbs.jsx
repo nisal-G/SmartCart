@@ -9,22 +9,25 @@ export function Breadcrumbs({ items }) {
   if (!items?.length) return null;
 
   return (
-    <nav aria-label="Breadcrumb" className="mb-3">
-      <ol className="flex flex-wrap items-center gap-1 text-sm text-slate-500">
+    <nav aria-label="Breadcrumb" className="mb-4">
+      <ol className="flex flex-wrap items-center gap-1.5 text-sm text-slate-500">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
           return (
-            <li key={`${item.label}-${index}`} className="flex items-center gap-1">
+            <li key={`${item.label}-${index}`} className="flex items-center gap-1.5">
               {index > 0 && <Icon name="chevronRight" size="xs" className="text-slate-300" />}
               {item.to && !isLast ? (
                 <Link
                   to={item.to}
-                  className="rounded-sm transition-colors hover:text-brand-700 hover:underline"
+                  className="rounded-sm font-medium transition-colors hover:text-brand-700"
                 >
                   {item.label}
                 </Link>
               ) : (
-                <span className="max-w-[16rem] truncate font-medium text-slate-700" aria-current={isLast ? 'page' : undefined}>
+                <span
+                  className="max-w-64 truncate font-semibold text-slate-800"
+                  aria-current={isLast ? 'page' : undefined}
+                >
                   {item.label}
                 </span>
               )}

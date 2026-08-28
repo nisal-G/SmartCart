@@ -7,9 +7,12 @@ import { classNames } from '../../utils/classNames';
 const TONE_CLASSES = {
   neutral: 'border-slate-200 bg-slate-50 text-slate-700',
   brand: 'border-brand-200 bg-brand-50 text-brand-800',
+  accent: 'border-accent-200 bg-accent-50 text-accent-700',
   success: 'border-emerald-200 bg-emerald-50 text-emerald-800',
   warning: 'border-amber-200 bg-amber-50 text-amber-800',
   danger: 'border-red-200 bg-red-50 text-red-700',
+  // For badges laid over imagery or a dark panel.
+  inverse: 'border-white/25 bg-white/15 text-white backdrop-blur-md',
 };
 
 const SIZE_CLASSES = {

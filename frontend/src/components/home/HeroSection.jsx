@@ -14,6 +14,14 @@ const HERO_VIDEO_SRC = '/Hero_Video.mp4';
 // moving one does.
 const REDUCED_MOTION_FRAME_SECONDS = 9;
 
+// Capability statements only — each one describes something the app
+// actually does. No invented delivery times, ratings or customer counts.
+const HERO_POINTS = [
+  { icon: 'leaf', label: 'Fresh produce & bakery' },
+  { icon: 'shield', label: 'Secure PayHere checkout' },
+  { icon: 'receipt', label: 'Order tracking built in' },
+];
+
 /**
  * Homepage hero: the grocery clip fills the whole panel as a background —
  * covered by a fixed navy/brand gradient for contrast — with the message and
@@ -66,7 +74,7 @@ export function HeroSection({ showCategoriesCta = false }) {
     // is a normal flex child and *does* — so on a viewport too narrow for
     // the copy to fit inside the floor, the section grows to fit it instead
     // of clipping text, and the video simply stretches to match.
-    <section className="relative isolate flex min-h-125 items-center overflow-hidden rounded-panel bg-slate-900 sm:min-h-140 lg:min-h-160">
+    <section className="relative isolate flex min-h-132 items-center overflow-hidden rounded-panel bg-slate-900 shadow-panel sm:min-h-150 lg:min-h-172">
       <video
         ref={videoRef}
         className="absolute inset-0 h-full w-full object-cover"
@@ -81,49 +89,64 @@ export function HeroSection({ showCategoriesCta = false }) {
         <source src={HERO_VIDEO_SRC} type="video/mp4" />
       </video>
 
-      {/* Overlay, in three layers: a left-to-right navy scrim so the text
+      {/* Overlay, in four layers: a left-to-right navy scrim so the text
           column sits on a readable near-opaque ground while the right side
           of the clip stays visible; a brand-green wash from the bottom so
-          the panel reads as SmartCart's, not a stock clip; and a soft
-          vignette so the frame edges settle rather than cutting hard. */}
+          the panel reads as SmartCart's, not a stock clip; a soft vignette
+          so the frame edges settle rather than cutting hard; and a very
+          faint grain-free highlight at the top-left where the badge sits. */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-linear-to-r from-slate-950/85 via-slate-950/55 to-slate-950/15"
+        className="absolute inset-0 bg-linear-to-r from-slate-950/88 via-slate-950/60 to-slate-950/20"
       />
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-linear-to-t from-brand-950/45 via-transparent to-transparent"
+        className="absolute inset-0 bg-linear-to-t from-brand-950/55 via-transparent to-transparent"
       />
       <div
         aria-hidden="true"
-        className="absolute inset-0 [background:radial-gradient(120%_100%_at_100%_0%,transparent_35%,rgb(2_6_23/0.35)_100%)]"
+        className="absolute inset-0 [background:radial-gradient(120%_100%_at_100%_0%,transparent_35%,rgb(2_6_23/0.4)_100%)]"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute -left-32 -top-32 h-96 w-96 animate-aurora rounded-full bg-brand-500/20 blur-3xl"
       />
 
-      <div className="relative z-10 w-full px-6 py-14 sm:px-10 sm:py-16 lg:px-16">
-        <div className="max-w-xl animate-hero-rise">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white backdrop-blur-md">
+      <div className="relative z-10 w-full px-6 py-16 sm:px-10 sm:py-20 lg:px-16 lg:py-24">
+        <div className="max-w-2xl">
+          <span
+            className="inline-flex animate-hero-rise items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-white backdrop-blur-md"
+            style={{ animationDelay: '40ms' }}
+          >
             <Icon name="store" size="sm" />
             Online grocery shopping
           </span>
 
-          <h1 className="mt-5 text-4xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-6xl">
+          <h1
+            className="mt-6 animate-hero-rise text-balance text-4xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl"
+            style={{ animationDelay: '120ms' }}
+          >
             Fresh groceries,
             <br />
-            <span className="text-brand-300">one smart cart.</span>
+            <span className="bg-linear-to-r from-brand-300 via-brand-200 to-accent-200 bg-clip-text text-transparent">
+              one smart cart.
+            </span>
           </h1>
 
-          <p className="mt-5 max-w-md text-base leading-relaxed text-white/85 sm:text-lg">
+          <p
+            className="mt-6 max-w-lg animate-hero-rise text-pretty text-base leading-relaxed text-white/85 sm:text-lg"
+            style={{ animationDelay: '200ms' }}
+          >
             Browse vegetables, fruits, cakes and biscuits by category, add what you need to your
             cart, and check out in minutes.
           </p>
 
-          <div className="mt-8 flex flex-col flex-wrap gap-3 sm:flex-row">
-            <Link to={ROUTES.PRODUCTS}>
-              <Button
-                size="lg"
-                fullWidth
-                className="shadow-lg shadow-black/30 hover:-translate-y-0.5 sm:w-auto"
-              >
+          <div
+            className="mt-9 flex animate-hero-rise flex-col flex-wrap gap-3 sm:flex-row"
+            style={{ animationDelay: '280ms' }}
+          >
+            <Link to={ROUTES.PRODUCTS} className="sm:w-auto">
+              <Button size="lg" fullWidth className="shadow-float sm:w-auto">
                 Start shopping
                 <Icon name="arrowRight" size="sm" />
               </Button>
@@ -138,12 +161,29 @@ export function HeroSection({ showCategoriesCta = false }) {
               // <Button size="lg"> exactly so the pair still lines up.
               <a
                 href="#shop-by-category"
-                className="inline-flex h-12 select-none items-center justify-center gap-2 rounded-control border border-white/40 bg-white/10 px-6 text-base font-semibold text-white backdrop-blur-md transition-[background-color,border-color,transform] duration-150 ease-out hover:-translate-y-0.5 hover:border-white/60 hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:translate-y-0"
+                className="inline-flex h-13 select-none items-center justify-center gap-2.5 rounded-control border border-white/40 bg-white/10 px-7 text-base font-semibold text-white backdrop-blur-md transition-[background-color,border-color,transform] duration-200 ease-standard hover:-translate-y-px hover:border-white/60 hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:translate-y-px"
               >
                 Browse categories
               </a>
             )}
           </div>
+
+          <ul
+            className="mt-10 flex animate-hero-rise flex-wrap gap-x-6 gap-y-3"
+            style={{ animationDelay: '360ms' }}
+          >
+            {HERO_POINTS.map((point) => (
+              <li key={point.label} className="flex items-center gap-2 text-sm text-white/80">
+                <span
+                  className="flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-white/10 text-brand-200 backdrop-blur-md"
+                  aria-hidden="true"
+                >
+                  <Icon name={point.icon} size="sm" />
+                </span>
+                {point.label}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </section>

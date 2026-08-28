@@ -71,7 +71,7 @@ const STATUS_BAR_CLASSES = {
  */
 function StatCard({ label, value, icon, tint = 'neutral', to, linkLabel }) {
   return (
-    <div className="rounded-card border border-slate-200 bg-white p-5 shadow-card transition-shadow duration-200 hover:shadow-card-hover">
+    <div className="rounded-card border border-slate-200/80 bg-white p-5 shadow-card transition-[box-shadow,transform] duration-300 ease-entrance hover:-translate-y-0.5 hover:shadow-lift">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-medium text-slate-500">{label}</p>
@@ -123,8 +123,8 @@ function QuickAction({ to, icon, label }) {
  */
 function OrderPipeline({ total, statusCounts }) {
   return (
-    <div className="rounded-card border border-slate-200 bg-white p-5 shadow-card sm:p-6">
-      <h3 className="text-base font-semibold text-slate-900">Order pipeline</h3>
+    <div className="rounded-card border border-slate-200/80 bg-white p-5 shadow-card sm:p-6">
+      <h3 className="text-base font-bold text-slate-900">Order pipeline</h3>
       <p className="mt-1 text-sm text-slate-500">How every order today breaks down by status.</p>
 
       <div
@@ -286,7 +286,7 @@ export function AdminDashboard() {
       {loading && (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-hidden="true">
           {[0, 1, 2, 3].map((index) => (
-            <div key={index} className="rounded-card border border-slate-200 bg-white p-5 shadow-card">
+            <div key={index} className="rounded-card border border-slate-200/80 bg-white p-5 shadow-card">
               <Skeleton className="h-4 w-28" />
               <Skeleton className="mt-3 h-9 w-16" />
               <Skeleton className="mt-4 h-4 w-32" />
@@ -334,8 +334,8 @@ export function AdminDashboard() {
             />
           </div>
 
-          <div className="mt-6 rounded-card border border-slate-200 bg-white p-5 shadow-card sm:p-6">
-            <h3 className="text-base font-semibold text-slate-900">Quick actions</h3>
+          <div className="mt-6 rounded-card border border-slate-200/80 bg-white p-5 shadow-card sm:p-6">
+            <h3 className="text-base font-bold text-slate-900">Quick actions</h3>
             <p className="mt-1 text-sm text-slate-500">
               Common tasks for managing your store.
             </p>
@@ -355,7 +355,7 @@ export function AdminDashboard() {
       <div className="mt-6">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <h3 className="text-base font-semibold text-slate-900">Recent orders</h3>
+            <h3 className="text-base font-bold text-slate-900">Recent orders</h3>
             <p className="mt-0.5 text-sm text-slate-500">The latest activity across your store.</p>
           </div>
           <Link

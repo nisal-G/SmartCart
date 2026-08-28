@@ -33,12 +33,12 @@ export function AdminTable({ head, children, className }) {
   return (
     <div
       className={classNames(
-        'hidden max-h-[70vh] overflow-auto rounded-card border border-slate-200 bg-white shadow-card md:block',
+        'hidden max-h-[70vh] overflow-auto rounded-card border border-slate-200/80 bg-white shadow-card md:block',
         className
       )}
     >
       <table className="w-full text-left text-sm">
-        <thead className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500">
+        <thead className="sticky top-0 z-10 border-b border-slate-200 bg-sunken text-xs font-bold uppercase tracking-wider text-slate-500">
           <tr>{head}</tr>
         </thead>
         <tbody className="divide-y divide-slate-100">{children}</tbody>
@@ -99,6 +99,6 @@ export function AdminCardList({ children }) {
 /** One record as a card, matching AdminTable's surface treatment. */
 export function AdminCard({ children }) {
   return (
-    <div className="rounded-card border border-slate-200 bg-white p-4 shadow-card">{children}</div>
+    <div className="rounded-card border border-slate-200/80 bg-white p-4 shadow-card transition-shadow duration-200 hover:shadow-card-hover">{children}</div>
   );
 }

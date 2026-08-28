@@ -159,7 +159,7 @@ export function AdminUsers() {
         </p>
       </div>
 
-      <div className="mb-6 rounded-card border border-slate-200 bg-white p-4 shadow-card sm:p-5">
+      <div className="mb-6 rounded-card border border-slate-200/80 bg-white p-4 shadow-card sm:p-5">
         <div className="mb-4 flex items-center gap-2.5 text-sm font-semibold text-slate-700">
           <span className="flex h-7 w-7 items-center justify-center rounded-control bg-slate-100 text-slate-500">
             <Icon name="filter" size="sm" />

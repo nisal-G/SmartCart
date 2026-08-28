@@ -15,7 +15,7 @@ export function OrderItem({ item }) {
   return (
     <li className="flex items-center gap-4 py-4">
       <span
-        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-card bg-slate-100 text-slate-300 ring-1 ring-slate-200/70"
+        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-card bg-linear-to-br from-slate-50 to-slate-100 text-slate-300 ring-1 ring-slate-200/70"
         aria-hidden="true"
       >
         <Icon name="package" size="md" strokeWidth={1.5} />
@@ -26,7 +26,7 @@ export function OrderItem({ item }) {
           {formatCurrency(price)} × {quantity}
         </p>
       </div>
-      <span className="shrink-0 text-sm font-bold tabular-nums text-slate-900">
+      <span className="shrink-0 text-sm font-extrabold tabular-nums text-slate-900">
         {formatCurrency(subtotal)}
       </span>
     </li>

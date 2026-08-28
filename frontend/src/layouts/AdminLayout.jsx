@@ -30,7 +30,7 @@ export function AdminLayout() {
         <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
           {/* Desktop rail */}
           <aside className="hidden w-64 shrink-0 lg:block">
-            <div className="sticky top-28 flex flex-col rounded-card border border-slate-200 bg-white p-3 shadow-card">
+            <div className="sticky top-32 flex flex-col rounded-panel border border-slate-200/80 bg-white p-3.5 shadow-card">
               <div className="flex items-center gap-2.5 px-2 pb-3 pt-1">
                 <span
                   className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-brand-500 to-brand-700 text-white shadow-xs"

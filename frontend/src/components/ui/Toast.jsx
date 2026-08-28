@@ -30,7 +30,7 @@ export function ToastViewport({ toasts, onDismiss }) {
           role="status"
           aria-live="polite"
           className={classNames(
-            'pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-card border px-4 py-3 shadow-card-hover',
+            'pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-card border px-4 py-3.5 shadow-float',
             t.leaving ? 'animate-toast-out' : 'animate-toast-in',
             TONE_CLASSES[t.tone] || TONE_CLASSES.success
           )}

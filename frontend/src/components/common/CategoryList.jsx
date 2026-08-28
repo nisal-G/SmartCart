@@ -1,11 +1,14 @@
 import { classNames } from '../../utils/classNames';
 
 const PILL_BASE = classNames(
-  'shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition-colors duration-150',
+  'shrink-0 rounded-full border px-4 py-2.5 text-sm font-semibold',
+  'transition-[background-color,border-color,color,box-shadow,transform] duration-200 ease-standard',
+  'hover:-translate-y-px',
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600'
 );
-const PILL_ACTIVE = 'border-brand-600 bg-brand-600 text-white shadow-xs';
-const PILL_INACTIVE = 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50';
+const PILL_ACTIVE = 'border-brand-600 bg-brand-600 text-white shadow-brand';
+const PILL_INACTIVE =
+  'border-slate-200 bg-white text-slate-700 shadow-xs hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800';
 
 /**
  * Horizontal category filter bar for the Products page. `activeCategory` is
@@ -15,7 +18,7 @@ const PILL_INACTIVE = 'border-slate-200 bg-white text-slate-700 hover:border-sla
 export function CategoryList({ categories, activeCategory, onSelect }) {
   return (
     <div
-      className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-none sm:mx-0 sm:px-0"
+      className="-mx-4 flex gap-2.5 overflow-x-auto px-4 pb-2 pt-1 scrollbar-none sm:mx-0 sm:px-0"
       role="tablist"
       aria-label="Product categories"
     >

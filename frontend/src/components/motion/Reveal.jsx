@@ -30,7 +30,7 @@ export function Reveal({ children, as: As = 'div', variant = 'up', delay = 0, cl
       ref={ref}
       style={delay ? { transitionDelay: `${delay}ms` } : undefined}
       className={classNames(
-        'transition-[opacity,transform] duration-500 ease-out',
+        'transition-[opacity,transform] duration-600 ease-entrance',
         inView ? 'translate-y-0 scale-100 opacity-100' : HIDDEN_CLASSES[variant] || HIDDEN_CLASSES.up,
         className
       )}
