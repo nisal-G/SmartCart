@@ -13,6 +13,7 @@ import { Pagination } from '../../components/common/Pagination';
 import { AdminCard, AdminCardList, AdminTable, Td, Th, Tr } from '../../components/admin/AdminTable';
 import productService from '../../services/productService';
 import categoryService from '../../services/categoryService';
+import { useToast } from '../../hooks/useToast';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { formatDate } from '../../utils/formatDate';
 import { ROUTES, adminProductEditPath } from '../../constants/routes';
@@ -28,6 +29,7 @@ const PAGE_SIZE = 10;
 export function AdminProducts() {
   const location = useLocation();
   const [flash] = useState(location.state?.flash || null);
+  const toast = useToast();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const page = parseInt(searchParams.get('page'), 10) || 1;
@@ -128,6 +130,7 @@ export function AdminProducts() {
       await productService.deleteProduct(productId);
       setConfirmingId(null);
       fetchProducts();
+      toast.success('Product deleted');
     } catch (err) {
       setDeleteError(err.message);
     } finally {

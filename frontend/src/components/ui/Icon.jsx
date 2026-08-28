@@ -45,6 +45,7 @@ const PATHS = {
   shield: <><path d="M12 3.5 19 6v6c0 4-3 7-7 8.5C8 19 5 16 5 12V6l7-2.5Z" /><path d="m9.5 12 1.8 1.8L15 10" /></>,
   logout: <><path d="M14 4h3.5A1.5 1.5 0 0 1 19 5.5v13a1.5 1.5 0 0 1-1.5 1.5H14" /><path d="M10 8 6 12l4 4" /><path d="M6 12h9" /></>,
   key: <><circle cx="8" cy="14" r="4" /><path d="m11 11 8-8" /><path d="m16.5 5.5 2 2" /><path d="m14 8 2 2" /></>,
+  clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3.2 2" /></>,
   google: 'brand-google',
   facebook: 'brand-facebook',
 };

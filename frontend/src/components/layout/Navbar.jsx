@@ -5,6 +5,7 @@ import { useCart } from '../../hooks/useCart';
 import { ROUTES } from '../../constants/routes';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
+import { AdminNav } from '../admin/AdminNav';
 import categoryService from '../../services/categoryService';
 import { classNames } from '../../utils/classNames';
 
@@ -344,51 +345,63 @@ export function Navbar() {
           className="animate-slide-down border-t border-slate-200 bg-white md:hidden"
         >
           <nav aria-label="Mobile" className="mx-auto w-full max-w-7xl px-4 py-3 sm:px-6">
-            <div className="flex flex-col gap-1">
-              {PRIMARY_LINKS.map((link) => (
-                <NavLink
-                  key={link.to}
-                  to={link.to}
-                  end={link.end}
-                  className={mobileLinkClass}
-                  onClick={closeMobile}
-                >
-                  {link.label}
-                  <Icon name="chevronRight" size="sm" className="text-slate-300" />
-                </NavLink>
-              ))}
-              {isAuthenticated && (
-                <NavLink to={ROUTES.ORDERS} className={mobileLinkClass} onClick={closeMobile}>
-                  Orders
-                  <Icon name="chevronRight" size="sm" className="text-slate-300" />
-                </NavLink>
-              )}
-              {isAdmin && (
-                <NavLink to={ROUTES.ADMIN} className={mobileLinkClass} onClick={closeMobile}>
-                  Admin
-                  <Icon name="chevronRight" size="sm" className="text-slate-300" />
-                </NavLink>
-              )}
-            </div>
-
-            {visibleCategories.length > 0 && (
-              <div className="mt-4 border-t border-slate-100 pt-3">
-                <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                  Shop by category
-                </p>
-                <div className="flex flex-wrap gap-2 px-1">
-                  {visibleCategories.map((category) => (
-                    <Link
-                      key={category._id}
-                      to={`${ROUTES.PRODUCTS}?category=${category._id}`}
-                      onClick={closeMobile}
-                      className="rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800"
-                    >
-                      {category.name}
-                    </Link>
-                  ))}
-                </div>
+            {isAdminArea ? (
+              // Full grouped admin nav (Dashboard/Products/Categories/
+              // Orders/Users + View storefront) — the phone-width
+              // counterpart to the desktop sidebar, rather than the single
+              // "Admin" link a logged-in admin gets on the storefront.
+              <div className="animate-drawer-in">
+                <AdminNav variant="drawer" onNavigate={closeMobile} />
               </div>
+            ) : (
+              <>
+                <div className="flex flex-col gap-1">
+                  {PRIMARY_LINKS.map((link) => (
+                    <NavLink
+                      key={link.to}
+                      to={link.to}
+                      end={link.end}
+                      className={mobileLinkClass}
+                      onClick={closeMobile}
+                    >
+                      {link.label}
+                      <Icon name="chevronRight" size="sm" className="text-slate-300" />
+                    </NavLink>
+                  ))}
+                  {isAuthenticated && (
+                    <NavLink to={ROUTES.ORDERS} className={mobileLinkClass} onClick={closeMobile}>
+                      Orders
+                      <Icon name="chevronRight" size="sm" className="text-slate-300" />
+                    </NavLink>
+                  )}
+                  {isAdmin && (
+                    <NavLink to={ROUTES.ADMIN} className={mobileLinkClass} onClick={closeMobile}>
+                      Admin
+                      <Icon name="chevronRight" size="sm" className="text-slate-300" />
+                    </NavLink>
+                  )}
+                </div>
+
+                {visibleCategories.length > 0 && (
+                  <div className="mt-4 border-t border-slate-100 pt-3">
+                    <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      Shop by category
+                    </p>
+                    <div className="flex flex-wrap gap-2 px-1">
+                      {visibleCategories.map((category) => (
+                        <Link
+                          key={category._id}
+                          to={`${ROUTES.PRODUCTS}?category=${category._id}`}
+                          onClick={closeMobile}
+                          className="rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800"
+                        >
+                          {category.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
             <div className="mt-4 border-t border-slate-100 pt-4">

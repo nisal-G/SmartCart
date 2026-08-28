@@ -8,6 +8,7 @@ import { SuccessMessage } from '../../components/common/SuccessMessage';
 import { TableSkeleton } from '../../components/common/skeletons';
 import { AdminCard, AdminCardList, AdminTable, Td, Th, Tr } from '../../components/admin/AdminTable';
 import categoryService from '../../services/categoryService';
+import { useToast } from '../../hooks/useToast';
 import { ROUTES, adminCategoryEditPath } from '../../constants/routes';
 
 /**
@@ -19,6 +20,7 @@ import { ROUTES, adminCategoryEditPath } from '../../constants/routes';
 export function AdminCategories() {
   const location = useLocation();
   const [flash] = useState(location.state?.flash || null);
+  const toast = useToast();
 
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,6 +63,7 @@ export function AdminCategories() {
       await categoryService.deleteCategory(categoryId);
       setConfirmingId(null);
       fetchCategories();
+      toast.success('Category deleted');
     } catch (err) {
       // e.g. products may still reference this category — the backend's own
       // sanitized message (if any) is shown as-is; nothing is invented here.

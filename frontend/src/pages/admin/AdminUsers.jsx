@@ -11,6 +11,7 @@ import { Pagination } from '../../components/common/Pagination';
 import { AdminCard, AdminCardList, AdminTable, Td, Th, Tr } from '../../components/admin/AdminTable';
 import userService from '../../services/userService';
 import { useAuth } from '../../hooks/useAuth';
+import { useToast } from '../../hooks/useToast';
 import { formatDate } from '../../utils/formatDate';
 
 const PAGE_SIZE = 10;
@@ -67,6 +68,7 @@ function Avatar({ name }) {
  */
 export function AdminUsers() {
   const { user: currentUser } = useAuth();
+  const toast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const page = parseInt(searchParams.get('page'), 10) || 1;
   const role = searchParams.get('role') || '';
@@ -136,6 +138,7 @@ export function AdminUsers() {
       const updated = await userService.updateUserStatus(userId, nextStatus);
       setUsers((prev) => prev.map((u) => (u._id === userId ? updated : u)));
       setConfirmingId(null);
+      toast.success(nextStatus === 'suspended' ? 'User suspended' : 'User reactivated');
     } catch (err) {
       setActionError(err.message);
     } finally {

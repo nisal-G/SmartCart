@@ -12,15 +12,11 @@ import { AdminCard, AdminCardList, AdminTable, Td, Th, Tr } from '../../componen
 import orderService from '../../services/orderService';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { formatDate } from '../../utils/formatDate';
+import { shortOrderId } from '../../utils/orderId';
 import { ORDER_STATUSES, formatStatusLabel } from '../../constants/orderStatuses';
 import { adminOrderDetailsPath } from '../../constants/routes';
 
 const PAGE_SIZE = 10;
-
-/** Last-8-characters, uppercased — same short id convention as the customer-facing OrderCard. */
-function shortOrderId(id) {
-  return `#${String(id).slice(-8).toUpperCase()}`;
-}
 
 /**
  * Admin order list (/admin/orders). Uses GET /api/orders/all's own

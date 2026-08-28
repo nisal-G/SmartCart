@@ -20,7 +20,7 @@ export function AdminTable({ head, children, className }) {
       )}
     >
       <table className="w-full text-left text-sm">
-        <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500">
+        <thead className="sticky top-16 z-10 border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500">
           <tr>{head}</tr>
         </thead>
         <tbody className="divide-y divide-slate-100">{children}</tbody>
