@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-
 import { useAuth } from '../../hooks/useAuth';
 import { useCart } from '../../hooks/useCart';
 import { ROUTES } from '../../constants/routes';
+import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { AdminNav } from '../admin/AdminNav';
@@ -20,15 +21,6 @@ const PRIMARY_LINKS = [
 // The category strip is a convenience, not the catalogue: the full list
 // always lives on /products, which owns filtering.
 const MAX_CATEGORY_LINKS = 6;
-
-function initialsOf(name) {
-  const parts = String(name || '')
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-  if (parts.length === 0) return '?';
-  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
-}
 
 /**
  * Storefront search. Submits to /products?search=… — the same server-side
@@ -276,12 +268,11 @@ export function Navbar() {
             {isAuthenticated ? (
               <div className="hidden items-center gap-2 md:flex">
                 <span className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2">
-                  <span
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-800"
-                    aria-hidden="true"
-                  >
-                    {initialsOf(user.name)}
-                  </span>
+                  <Avatar
+                    name={user.name}
+                    avatarUrl={user.avatarUrl}
+                    className="h-8 w-8 bg-brand-100 text-xs font-bold text-brand-800"
+                  />
                   <span className="hidden max-w-[10rem] truncate text-sm font-semibold text-slate-800 lg:block">
                     {user.name}
                   </span>
@@ -412,12 +403,11 @@ export function Navbar() {
               {isAuthenticated ? (
                 <div className="flex items-center justify-between gap-3">
                   <span className="flex min-w-0 items-center gap-2.5">
-                    <span
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-800"
-                      aria-hidden="true"
-                    >
-                      {initialsOf(user.name)}
-                    </span>
+                    <Avatar
+                      name={user.name}
+                      avatarUrl={user.avatarUrl}
+                      className="h-9 w-9 bg-brand-100 text-xs font-bold text-brand-800"
+                    />
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-semibold text-slate-900">
                         {user.name}
