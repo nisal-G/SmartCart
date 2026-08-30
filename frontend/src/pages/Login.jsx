@@ -31,48 +31,20 @@ const PASSKEY_PANEL = {
   REGISTER: 'register',
 };
 
-/** Thin horizontal rule with a centred caption. */
-function Divider({ children }) {
-  return (
-    <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
-      <span className="h-px flex-1 bg-slate-200" />
-      {children}
-      <span className="h-px flex-1 bg-slate-200" />
-    </div>
-  );
-}
-
 /**
  * Login screen wired to the real auth foundation: Google/Facebook trigger a
- * full-page OAuth redirect (see authService), Passkey drives the
- * @simplewebauthn/browser ceremony via AuthContext, and the email/password
- * form only ever authenticates admin accounts (SRS §3.1 — shoppers use
- * Google/Facebook/Passkey only).
+ * full-page OAuth redirect (see authService), and Passkey drives the
+ * @simplewebauthn/browser ceremony via AuthContext. This page is
+ * shopper-only (SRS §3.1 — shoppers use Google/Facebook/Passkey only);
+ * administrator email/password sign-in lives on its own dedicated route
+ * (see pages/admin/AdminLogin.jsx), reachable from the site footer rather
+ * than from here.
  */
 export function Login() {
-  const { loginWithGoogle, loginWithFacebook, adminLogin, loginWithPasskey, registerPasskey } =
-    useAuth();
+  const { loginWithGoogle, loginWithFacebook, loginWithPasskey, registerPasskey } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const redirectTo = location.state?.from?.pathname || ROUTES.HOME;
-
-  const [form, setForm] = useState({ email: '', password: '' });
-  const [error, setError] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-
-  async function handleAdminLogin(event) {
-    event.preventDefault();
-    setError(null);
-    setSubmitting(true);
-    try {
-      await adminLogin(form);
-      navigate(redirectTo, { replace: true });
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
-  }
 
   // browserSupportsWebAuthn() just checks for navigator.credentials —
   // constant for the life of the page, so this doesn't need to live in state.
@@ -133,23 +105,23 @@ export function Login() {
 
   return (
     <PageWrapper className="flex items-center">
-      <div className="mx-auto w-full max-w-md py-6 sm:py-10">
+      <div className="mx-auto w-full max-w-md py-4 sm:py-8">
         <div className="flex flex-col items-center text-center">
-          <Link to={ROUTES.HOME} className="flex items-center gap-2.5">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-xs">
+          <Link to={ROUTES.HOME} className="group flex items-center gap-2.5">
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-brand-500 to-brand-700 text-white shadow-brand transition-transform duration-300 ease-entrance group-hover:scale-105">
               <Icon name="cart" size="lg" strokeWidth={2} />
             </span>
-            <span className="text-xl font-extrabold tracking-tight text-slate-900">
+            <span className="text-2xl font-extrabold tracking-tight text-slate-900">
               Smart<span className="text-brand-600">Cart</span>
             </span>
           </Link>
-          <h1 className="mt-6 text-2xl font-bold tracking-tight text-slate-900">Welcome back</h1>
-          <p className="mt-2 text-sm text-slate-600">
+          <h1 className="mt-7 text-3xl font-bold tracking-tight text-slate-900">Welcome back</h1>
+          <p className="mt-2.5 text-pretty text-sm leading-relaxed text-slate-600">
             Sign in to build your cart, check out and track your orders.
           </p>
         </div>
 
-        <div className="mt-8 rounded-panel border border-slate-200 bg-white p-6 shadow-card sm:p-8">
+        <div className="mt-8 animate-scale-in rounded-panel border border-slate-200/80 bg-white p-6 shadow-panel sm:p-8">
           <div className="flex flex-col gap-3">
             <Button variant="outline" size="lg" fullWidth onClick={loginWithGoogle}>
               <Icon name="google" size="md" />
@@ -176,7 +148,7 @@ export function Login() {
 
             {passkeyPanel === PASSKEY_PANEL.LOGIN && (
               <form
-                className="flex animate-fade-in flex-col gap-4 rounded-card border border-slate-200 bg-slate-50/60 p-4"
+                className="flex animate-scale-in flex-col gap-4 rounded-card border border-slate-200 bg-sunken/70 p-5"
                 onSubmit={handlePasskeyLogin}
               >
                 {passkeyError && <ErrorMessage message={passkeyError} />}
@@ -203,7 +175,7 @@ export function Login() {
 
             {passkeyPanel === PASSKEY_PANEL.REGISTER && (
               <form
-                className="flex animate-fade-in flex-col gap-4 rounded-card border border-slate-200 bg-slate-50/60 p-4"
+                className="flex animate-scale-in flex-col gap-4 rounded-card border border-slate-200 bg-sunken/70 p-5"
                 onSubmit={handlePasskeyRegister}
               >
                 <p className="text-sm text-slate-600">
@@ -230,40 +202,11 @@ export function Login() {
               </form>
             )}
           </div>
-
-          <div className="my-6">
-            <Divider>Admin login</Divider>
-          </div>
-
-          <form className="flex flex-col gap-4" onSubmit={handleAdminLogin}>
-            {error && <ErrorMessage message={error} />}
-            <Input
-              type="email"
-              label="Email"
-              required
-              autoComplete="email"
-              placeholder="admin@smartcart.example"
-              value={form.email}
-              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-            />
-            <Input
-              type="password"
-              label="Password"
-              required
-              autoComplete="current-password"
-              placeholder="••••••••"
-              value={form.password}
-              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-            />
-            <Button type="submit" size="lg" fullWidth loading={submitting}>
-              Log in
-            </Button>
-          </form>
         </div>
 
-        <p className="mt-6 text-center text-xs leading-relaxed text-slate-500">
-          Shoppers sign in with Google, Facebook or a passkey. The email and password form is for
-          SmartCart administrators.
+        <p className="mt-7 flex items-center justify-center gap-2 text-center text-xs leading-relaxed text-slate-500">
+          <Icon name="shield" size="xs" className="shrink-0 text-brand-600" />
+          By continuing you agree to SmartCart&apos;s terms and privacy policy.
         </p>
       </div>
     </PageWrapper>

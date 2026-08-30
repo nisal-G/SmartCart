@@ -7,7 +7,7 @@ import { Icon } from '../ui/Icon';
  * and in the admin area. `pagination` is the backend's own `{ page,
  * totalPages, total }` object — this never computes pagination itself.
  */
-export function Pagination({ pagination, onPageChange, className = 'mt-8' }) {
+export function Pagination({ pagination, onPageChange, className = 'mt-10' }) {
   if (!pagination || pagination.totalPages <= 1) return null;
 
   const { page, totalPages } = pagination;
@@ -15,7 +15,7 @@ export function Pagination({ pagination, onPageChange, className = 'mt-8' }) {
   return (
     <nav
       aria-label="Pagination"
-      className={`flex items-center justify-between gap-3 border-t border-slate-200 pt-6 sm:justify-center sm:gap-6 ${className}`}
+      className={`flex items-center justify-between gap-3 border-t border-slate-200 pt-8 sm:justify-center sm:gap-8 ${className}`}
     >
       <Button
         variant="outline"
@@ -26,7 +26,10 @@ export function Pagination({ pagination, onPageChange, className = 'mt-8' }) {
         <Icon name="chevronLeft" size="sm" />
         Previous
       </Button>
-      <p className="text-sm font-medium text-slate-600" aria-live="polite">
+      <p
+        className="rounded-full bg-white px-4 py-2 text-sm font-semibold tabular-nums text-slate-600 shadow-xs ring-1 ring-slate-200"
+        aria-live="polite"
+      >
         Page {page} of {totalPages}
       </p>
       <Button

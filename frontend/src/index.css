@@ -16,6 +16,12 @@
   --font-sans: "Inter", "Inter var", ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
 
+  /* Display face for headlines. Same no-webfont rule: a stack of faces that
+     ship with the major desktop/mobile OSes, falling through to --font-sans.
+     Used for marketing-scale headings, never body copy. */
+  --font-display: "Inter Display", "Inter", "Inter var", "SF Pro Display",
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
   /* Brand — fresh grocery green. Neutrals stay on Tailwind's slate ramp. */
   --color-brand-50: #ecfdf5;
   --color-brand-100: #d1fae5;
@@ -29,21 +35,44 @@
   --color-brand-900: #064e3b;
   --color-brand-950: #022c22;
 
-  /* Surfaces — `canvas` is the page behind cards, `surface` the cards. */
-  --color-canvas: #f7f8fa;
+  /* Accent — warm amber. Strictly a highlight: price emphasis, "new"
+     markers, the one warm note against an otherwise green/slate page. Never
+     a second primary action colour. */
+  --color-accent-50: #fffbeb;
+  --color-accent-100: #fef3c7;
+  --color-accent-200: #fde68a;
+  --color-accent-300: #fcd34d;
+  --color-accent-400: #fbbf24;
+  --color-accent-500: #f59e0b;
+  --color-accent-600: #d97706;
+  --color-accent-700: #b45309;
+
+  /* Surfaces — `canvas` is the page behind cards, `surface` the cards,
+     `sunken` the recessed strips (table headers, summary footers). */
+  --color-canvas: #f6f7f9;
   --color-surface: #ffffff;
+  --color-sunken: #f1f3f7;
 
-  /* Radii — small controls 8px, cards 14px, panels 20px, pills full. */
-  --radius-control: 0.5rem;
-  --radius-card: 0.875rem;
-  --radius-panel: 1.25rem;
+  /* Radii — small controls 10px, cards 16px, panels 24px, pills full. */
+  --radius-control: 0.625rem;
+  --radius-card: 1rem;
+  --radius-panel: 1.5rem;
 
-  /* Shadows — subtle by design; elevation comes from a soft, wide, very low
-     alpha shadow rather than a dark drop shadow. */
+  /* Shadows — elevation comes from soft, wide, very low alpha layers rather
+     than a dark drop shadow. `lift` is the hover step for cards, `float`
+     for anything that leaves the page plane (sticky bars, toasts). */
   --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 3px 0 rgb(15 23 42 / 0.05);
   --shadow-card-hover: 0 8px 20px -6px rgb(15 23 42 / 0.12), 0 2px 6px -2px rgb(15 23 42 / 0.06);
+  --shadow-lift: 0 18px 40px -20px rgb(15 23 42 / 0.28), 0 6px 14px -8px rgb(15 23 42 / 0.1);
+  --shadow-float: 0 24px 60px -24px rgb(15 23 42 / 0.35), 0 8px 20px -12px rgb(15 23 42 / 0.14);
   --shadow-panel: 0 12px 32px -12px rgb(15 23 42 / 0.18);
   --shadow-header: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+  --shadow-brand: 0 12px 28px -12px rgb(5 150 105 / 0.55);
+
+  /* Easing — one expressive curve for entrances, one standard curve for
+     anything that responds to a pointer. */
+  --ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Motion — 150–250ms for anything that responds to the user, never longer.
      `hero-rise` is the deliberate exception, and is for the homepage hero
@@ -54,10 +83,22 @@
   --animate-slide-down: slide-down 200ms ease-out;
   --animate-rise: rise 220ms ease-out;
   --animate-hero-rise: hero-rise 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-scale-in: scale-in 200ms cubic-bezier(0.16, 1, 0.3, 1);
 
   /* One-shot feedback for the cart badge when its count changes — replayed
      by giving the badge a new `key`, never left running. */
   --animate-cart-bump: cart-bump 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Admin toast stack entrance/exit and the admin mobile nav drawer's
+     slide-in — same 150–250ms budget as everything else above. */
+  --animate-toast-in: toast-in 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-toast-out: toast-out 160ms ease-in both;
+  --animate-drawer-in: drawer-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Ambient loops. Long and low-contrast on purpose — decoration that must
+     never pull the eye off content, and never applied to text. */
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-aurora: aurora 18s ease-in-out infinite;
 }
 
 @keyframes fade-in {
@@ -75,6 +116,11 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
 /* Homepage hero entrance. `both` fill is what makes the staggered delays
    safe: each element is held at its `from` state until its turn, and at its
    `to` state forever after. */
@@ -87,6 +133,35 @@
   0% { transform: scale(1); }
   45% { transform: scale(1.3); }
   100% { transform: scale(1); }
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(4px) scale(0.98); }
+}
+
+@keyframes drawer-in {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Sweeps a soft highlight across a skeleton. Paired with a 200% background
+   width so the travel reads as one pass, not a repeating band. */
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* Slow drift for the decorative blurred washes behind marketing panels. */
+@keyframes aurora {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33% { transform: translate3d(3%, -4%, 0) scale(1.08); }
+  66% { transform: translate3d(-3%, 3%, 0) scale(0.95); }
 }
 
 :root {
@@ -118,6 +193,15 @@
     flex-direction: column;
   }
 
+  /* Headings are set on the display stack with tighter tracking — one rule,
+     so no page has to remember to apply it. */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+
   /* One focus treatment for the whole app: a brand-coloured ring that is
      always visible on keyboard focus and never removed for aesthetics. */
   :focus-visible {
@@ -130,6 +214,12 @@
   img {
     max-width: 100%;
   }
+
+  /* Selection picks up the brand rather than the browser default blue. */
+  ::selection {
+    background-color: var(--color-brand-100);
+    color: var(--color-brand-900);
+  }
 }
 
 /* Horizontal scrollers (category pills, admin nav on mobile) keep the
@@ -140,6 +230,27 @@
   &::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* Keeps a headline from breaking to a one-word last line. */
+@utility text-balance {
+  text-wrap: balance;
+}
+
+@utility text-pretty {
+  text-wrap: pretty;
+}
+
+/* Skeleton fill: a travelling highlight rather than a flat pulsing block. */
+@utility shimmer {
+  background-image: linear-gradient(
+    90deg,
+    var(--color-slate-200) 0%,
+    var(--color-slate-100) 40%,
+    var(--color-slate-200) 80%
+  );
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
 }
 
 @media (prefers-reduced-motion: reduce) {

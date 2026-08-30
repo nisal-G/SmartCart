@@ -5,6 +5,7 @@
 export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
+  ADMIN_LOGIN: '/admin/login',
   AUTH_CALLBACK: '/auth/callback',
   PRODUCTS: '/products',
   PRODUCT_DETAILS: '/products/:id',

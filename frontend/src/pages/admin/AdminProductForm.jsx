@@ -196,7 +196,7 @@ export function AdminProductForm() {
 
       <form
         onSubmit={handleSubmit}
-        className="overflow-hidden rounded-card border border-slate-200 bg-white shadow-card"
+        className="overflow-hidden rounded-card border border-slate-200/80 bg-white shadow-card"
       >
         <div className="flex flex-col gap-5 p-5 sm:p-6">
           <Input
@@ -247,8 +247,16 @@ export function AdminProductForm() {
             </Select>
           </div>
 
-          <fieldset className="rounded-card border border-slate-200 bg-slate-50/50 p-4">
-            <legend className="px-1 text-sm font-semibold text-slate-700">Image</legend>
+          <fieldset className="rounded-card border border-dashed border-slate-300 bg-slate-50/50 p-4">
+            <legend className="flex items-center gap-2 px-1 text-sm font-semibold text-slate-700">
+              <span
+                className="flex h-6 w-6 items-center justify-center rounded-md bg-white text-slate-500 ring-1 ring-slate-200"
+                aria-hidden="true"
+              >
+                <Icon name="package" size="xs" />
+              </span>
+              Image
+            </legend>
 
             <div className="mt-1 flex flex-col gap-4">
               {currentImage && !imageFile && (

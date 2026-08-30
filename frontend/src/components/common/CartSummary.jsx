@@ -21,26 +21,29 @@ export function CartSummary({
   onCancelClear,
 }) {
   return (
-    <div className="rounded-card border border-slate-200 bg-white shadow-card lg:sticky lg:top-28">
-      <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
-        <h2 className="text-base font-semibold text-slate-900">Order summary</h2>
+    <div className="overflow-hidden rounded-panel border border-slate-200/80 bg-white shadow-card lg:sticky lg:top-32">
+      <div className="border-b border-slate-100 bg-sunken/60 px-6 py-4">
+        <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
+          <Icon name="receipt" size="sm" className="text-brand-600" />
+          Order summary
+        </h2>
       </div>
 
-      <div className="px-5 py-5 sm:px-6">
-        <dl className="space-y-3 text-sm">
+      <div className="px-6 py-6">
+        <dl className="space-y-3.5 text-sm">
           <div className="flex items-center justify-between">
             <dt className="text-slate-500">Items</dt>
             <dd className="font-semibold tabular-nums text-slate-900">{itemCount}</dd>
           </div>
           <div className="flex items-baseline justify-between border-t border-slate-100 pt-4">
-            <dt className="text-base font-semibold text-slate-900">Total</dt>
-            <dd className="text-2xl font-extrabold tabular-nums tracking-tight text-slate-900">
+            <dt className="text-base font-bold text-slate-900">Total</dt>
+            <dd className="text-3xl font-extrabold tabular-nums tracking-tight text-slate-900">
               {formatCurrency(total)}
             </dd>
           </div>
         </dl>
 
-        <Link to={ROUTES.CHECKOUT} className="mt-5 block">
+        <Link to={ROUTES.CHECKOUT} className="mt-6 block">
           <Button fullWidth size="lg">
             Proceed to checkout
             <Icon name="arrowRight" size="sm" />
@@ -53,20 +56,20 @@ export function CartSummary({
           </Button>
         </Link>
 
-        <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-slate-500">
-          <Icon name="shield" size="xs" className="text-slate-400" />
+        <p className="mt-5 flex items-center justify-center gap-1.5 rounded-control bg-slate-50 px-3 py-2.5 text-xs text-slate-500">
+          <Icon name="shield" size="xs" className="text-brand-600" />
           Payment is completed securely through PayHere
         </p>
       </div>
 
-      <div className="border-t border-slate-100 px-5 py-4 sm:px-6">
+      <div className="border-t border-slate-100 px-6 py-4">
         {clearError && (
-          <p className="mb-2 text-xs font-medium text-red-600" role="alert">
+          <p className="mb-2 text-xs font-semibold text-red-600" role="alert">
             {clearError}
           </p>
         )}
         {isConfirmingClear ? (
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex animate-fade-in flex-col gap-2 sm:flex-row">
             <Button
               variant="danger"
               size="sm"

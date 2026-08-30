@@ -121,13 +121,13 @@ export function Cart() {
   if (loading) {
     return (
       <PageWrapper>
-        <PageHeader title="Your cart" />
+        <PageHeader eyebrow="Your basket" title="Your cart" />
         <div className="grid gap-8 lg:grid-cols-3" aria-hidden="true">
           <div className="space-y-4 lg:col-span-2">
             {[0, 1].map((row) => (
               <div
                 key={row}
-                className="flex items-center gap-4 rounded-card border border-slate-200 bg-white p-5 shadow-card"
+                className="flex items-center gap-4 rounded-card border border-slate-200/80 bg-white p-5 shadow-card"
               >
                 <Skeleton className="h-20 w-20 shrink-0 rounded-card" />
                 <div className="flex-1 space-y-2">
@@ -138,7 +138,7 @@ export function Cart() {
               </div>
             ))}
           </div>
-          <Skeleton className="h-72 w-full rounded-card" />
+          <Skeleton className="h-80 w-full rounded-panel" />
         </div>
       </PageWrapper>
     );
@@ -147,7 +147,7 @@ export function Cart() {
   if (error) {
     return (
       <PageWrapper>
-        <PageHeader title="Your cart" />
+        <PageHeader eyebrow="Your basket" title="Your cart" />
         <ErrorMessage message={error} onRetry={loadCart} />
       </PageWrapper>
     );
@@ -156,7 +156,7 @@ export function Cart() {
   if (cart.items.length === 0) {
     return (
       <PageWrapper>
-        <PageHeader title="Your cart" />
+        <PageHeader eyebrow="Your basket" title="Your cart" />
         <EmptyState
           icon="cart"
           title="Your cart is empty"
@@ -177,6 +177,7 @@ export function Cart() {
   return (
     <PageWrapper>
       <PageHeader
+        eyebrow="Your basket"
         title="Your cart"
         description={`${itemCount} ${itemCount === 1 ? 'item' : 'items'} ready for checkout.`}
       />

@@ -28,6 +28,22 @@ import { ROUTES } from '../../constants/routes';
  * (backend/src/controllers/paymentController.js), never by this page.
  */
 
+/** Small icon chip preceding a section's h3 — purely decorative, keeps
+ * every card on this page reading as part of the same system. */
+function SectionHeading({ icon, children }) {
+  return (
+    <h3 className="flex items-center gap-2.5 text-base font-bold text-slate-900">
+      <span
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-control bg-brand-50 text-brand-700"
+        aria-hidden="true"
+      >
+        <Icon name={icon} size="sm" />
+      </span>
+      {children}
+    </h3>
+  );
+}
+
 /** One label/value pair in the order-information grid. */
 function Detail({ label, children, mono = false }) {
   return (
@@ -152,8 +168,8 @@ export function AdminOrderDetails() {
             item name's nowrap intrinsic width can otherwise widen this
             grid track past the viewport on narrow screens. */}
         <div className="min-w-0 space-y-6 lg:col-span-2">
-          <section className="rounded-card border border-slate-200 bg-white p-5 shadow-card sm:p-6">
-            <h3 className="text-base font-semibold text-slate-900">Order information</h3>
+          <section className="rounded-card border border-slate-200/80 bg-white p-5 shadow-card sm:p-6">
+            <SectionHeading icon="info">Order information</SectionHeading>
             <dl className="mt-4 grid grid-cols-1 gap-5 text-sm sm:grid-cols-2">
               <Detail label="Order ID" mono>
                 {_id}
@@ -196,8 +212,8 @@ export function AdminOrderDetails() {
           </section>
 
           {user && (user.name || user.email) && (
-            <section className="rounded-card border border-slate-200 bg-white p-5 shadow-card sm:p-6">
-              <h3 className="text-base font-semibold text-slate-900">Customer</h3>
+            <section className="rounded-card border border-slate-200/80 bg-white p-5 shadow-card sm:p-6">
+              <SectionHeading icon="user">Customer</SectionHeading>
               <dl className="mt-4 grid grid-cols-1 gap-5 text-sm sm:grid-cols-2">
                 {user.name && <Detail label="Name">{user.name}</Detail>}
                 {user.email && (
@@ -209,8 +225,8 @@ export function AdminOrderDetails() {
             </section>
           )}
 
-          <section className="rounded-card border border-slate-200 bg-white p-5 shadow-card sm:p-6">
-            <h3 className="text-base font-semibold text-slate-900">Items</h3>
+          <section className="rounded-card border border-slate-200/80 bg-white p-5 shadow-card sm:p-6">
+            <SectionHeading icon="package">Items</SectionHeading>
             <ul className="mt-2 divide-y divide-slate-100">
               {items.map((item, index) => (
                 <OrderItem key={`${item.product}-${index}`} item={item} />
@@ -220,8 +236,8 @@ export function AdminOrderDetails() {
         </div>
 
         <div className="space-y-6 lg:col-span-1">
-          <div className="rounded-card border border-slate-200 bg-white p-5 shadow-card sm:p-6">
-            <h3 className="text-base font-semibold text-slate-900">Summary</h3>
+          <div className="rounded-card border border-slate-200/80 bg-white p-5 shadow-card sm:p-6">
+            <SectionHeading icon="receipt">Summary</SectionHeading>
             <div className="mt-4 flex items-baseline justify-between border-t border-slate-100 pt-4">
               <span className="text-sm font-semibold text-slate-900">Total</span>
               <span className="text-2xl font-extrabold tabular-nums tracking-tight text-slate-900">
@@ -232,9 +248,9 @@ export function AdminOrderDetails() {
 
           <form
             onSubmit={handleUpdateStatus}
-            className="rounded-card border border-slate-200 bg-white p-5 shadow-card sm:p-6"
+            className="rounded-card border border-slate-200/80 bg-white p-5 shadow-card sm:p-6"
           >
-            <h3 className="text-base font-semibold text-slate-900">Order status</h3>
+            <SectionHeading icon="clock">Order status</SectionHeading>
             <p className="mb-4 mt-1 text-sm text-slate-500">
               Fulfilment state only — this never changes the payment.
             </p>

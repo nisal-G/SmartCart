@@ -9,11 +9,11 @@ import { Spinner } from '../ui/Spinner';
 export function Loading({ label = 'Loading…' }) {
   return (
     <div
-      className="flex flex-col items-center justify-center gap-3 py-20 text-slate-500"
+      className="flex flex-col items-center justify-center gap-4 rounded-panel border border-slate-200/80 bg-white py-20 text-slate-500 shadow-card sm:py-24"
       aria-live="polite"
     >
-      <Spinner />
-      <p className="text-sm font-medium">{label}</p>
+      <Spinner className="h-8 w-8" />
+      <p className="text-sm font-semibold text-slate-600">{label}</p>
     </div>
   );
 }

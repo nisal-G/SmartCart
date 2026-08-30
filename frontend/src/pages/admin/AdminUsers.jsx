@@ -11,6 +11,7 @@ import { Pagination } from '../../components/common/Pagination';
 import { AdminCard, AdminCardList, AdminTable, Td, Th, Tr } from '../../components/admin/AdminTable';
 import userService from '../../services/userService';
 import { useAuth } from '../../hooks/useAuth';
+import { useToast } from '../../hooks/useToast';
 import { formatDate } from '../../utils/formatDate';
 
 const PAGE_SIZE = 10;
@@ -67,6 +68,7 @@ function Avatar({ name }) {
  */
 export function AdminUsers() {
   const { user: currentUser } = useAuth();
+  const toast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const page = parseInt(searchParams.get('page'), 10) || 1;
   const role = searchParams.get('role') || '';
@@ -136,6 +138,7 @@ export function AdminUsers() {
       const updated = await userService.updateUserStatus(userId, nextStatus);
       setUsers((prev) => prev.map((u) => (u._id === userId ? updated : u)));
       setConfirmingId(null);
+      toast.success(nextStatus === 'suspended' ? 'User suspended' : 'User reactivated');
     } catch (err) {
       setActionError(err.message);
     } finally {
@@ -156,9 +159,11 @@ export function AdminUsers() {
         </p>
       </div>
 
-      <div className="mb-6 rounded-card border border-slate-200 bg-white p-4 shadow-card sm:p-5">
-        <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-700">
-          <Icon name="filter" size="sm" className="text-slate-400" />
+      <div className="mb-6 rounded-card border border-slate-200/80 bg-white p-4 shadow-card sm:p-5">
+        <div className="mb-4 flex items-center gap-2.5 text-sm font-semibold text-slate-700">
+          <span className="flex h-7 w-7 items-center justify-center rounded-control bg-slate-100 text-slate-500">
+            <Icon name="filter" size="sm" />
+          </span>
           Filters
         </div>
         <div className="grid gap-4 sm:max-w-md sm:grid-cols-2">

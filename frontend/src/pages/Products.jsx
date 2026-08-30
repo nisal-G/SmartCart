@@ -121,6 +121,7 @@ export function Products() {
             ]}
           />
         }
+        eyebrow={activeCategoryName ? 'Category' : 'Catalogue'}
         title="Products"
         description={
           activeCategoryName
@@ -130,18 +131,18 @@ export function Products() {
       />
 
       {searchTerm && (
-        <div className="mb-5 flex flex-wrap items-center gap-3 rounded-card border border-slate-200 bg-white p-3 shadow-card sm:p-4">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+        <div className="mb-6 flex animate-scale-in flex-wrap items-center gap-3 rounded-card border border-slate-200/80 bg-white p-3.5 shadow-card sm:p-4">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50 text-brand-600">
             <Icon name="search" size="sm" />
           </span>
           <p className="min-w-0 flex-1 text-sm text-slate-600">
             Showing results for{' '}
-            <span className="font-semibold text-slate-900">&ldquo;{searchTerm}&rdquo;</span>
+            <span className="font-bold text-slate-900">&ldquo;{searchTerm}&rdquo;</span>
           </p>
           <button
             type="button"
             onClick={clearSearch}
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3.5 py-2 text-sm font-semibold text-slate-600 transition-[border-color,background-color,color,transform] duration-200 ease-standard hover:-translate-y-px hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
           >
             <Icon name="close" size="xs" />
             Clear search
@@ -149,8 +150,12 @@ export function Products() {
         </div>
       )}
 
+      {/* Filter rail. Deliberately *not* sticky: the header above it already
+          sticks, and stacking a second sticky bar under a header whose own
+          height changes on scroll leaves the two either overlapping or
+          gapped depending on scroll position. */}
       {categories.length > 0 && (
-        <div className="mb-6">
+        <div className="mb-7 rounded-card border border-slate-200/80 bg-white px-4 py-3 shadow-card">
           <CategoryList
             categories={categories}
             activeCategory={categoryFilter}
@@ -160,8 +165,9 @@ export function Products() {
       )}
 
       {!loading && !error && products.length > 0 && total != null && (
-        <p className="mb-4 text-sm text-slate-500">
-          {total} {total === 1 ? 'product' : 'products'}
+        <p className="mb-5 text-sm text-slate-500">
+          <span className="font-bold text-slate-900">{total}</span>{' '}
+          {total === 1 ? 'product' : 'products'}
           {activeCategoryName ? ` in ${activeCategoryName}` : ''}
         </p>
       )}

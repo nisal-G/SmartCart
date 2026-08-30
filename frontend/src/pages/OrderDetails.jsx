@@ -4,6 +4,7 @@ import { PageWrapper } from '../components/ui/PageWrapper';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Breadcrumbs } from '../components/ui/Breadcrumbs';
 import { Button } from '../components/ui/Button';
+import { Icon } from '../components/ui/Icon';
 import { Loading } from '../components/common/Loading';
 import { ErrorMessage } from '../components/common/ErrorMessage';
 import { OrderStatusBadge } from '../components/common/OrderStatusBadge';
@@ -93,6 +94,7 @@ export function OrderDetails() {
             ]}
           />
         }
+        eyebrow="Order"
         title="Order details"
         description={`Placed ${formatDate(createdAt)} · ${itemCount} ${itemCount === 1 ? 'item' : 'items'}`}
         actions={
@@ -113,8 +115,11 @@ export function OrderDetails() {
             item name's nowrap intrinsic width can otherwise widen this
             grid track past the viewport on narrow screens. */}
         <div className="min-w-0 space-y-6 lg:col-span-2">
-          <section className="rounded-card border border-slate-200 bg-white p-5 shadow-card sm:p-6">
-            <h2 className="text-base font-semibold text-slate-900">Order information</h2>
+          <section className="rounded-panel border border-slate-200/80 bg-white p-6 shadow-card sm:p-7">
+            <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
+              <Icon name="info" size="sm" className="text-brand-600" />
+              Order information
+            </h2>
             <dl className="mt-4 grid grid-cols-1 gap-5 text-sm sm:grid-cols-2">
               <div>
                 <dt className="text-slate-500">Order ID</dt>
@@ -157,8 +162,11 @@ export function OrderDetails() {
             </dl>
           </section>
 
-          <section className="rounded-card border border-slate-200 bg-white p-5 shadow-card sm:p-6">
-            <h2 className="text-base font-semibold text-slate-900">Items</h2>
+          <section className="rounded-panel border border-slate-200/80 bg-white p-6 shadow-card sm:p-7">
+            <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
+              <Icon name="package" size="sm" className="text-brand-600" />
+              Items
+            </h2>
             <ul className="mt-2 divide-y divide-slate-100">
               {items.map((item, index) => (
                 <OrderItem key={`${item.product}-${index}`} item={item} />
@@ -168,18 +176,18 @@ export function OrderDetails() {
         </div>
 
         <div className="lg:col-span-1">
-          <div className="rounded-card border border-slate-200 bg-white shadow-card lg:sticky lg:top-28">
-            <div className="border-b border-slate-100 px-5 py-4 sm:px-6">
-              <h2 className="text-base font-semibold text-slate-900">Summary</h2>
+          <div className="overflow-hidden rounded-panel border border-slate-200/80 bg-white shadow-card lg:sticky lg:top-32">
+            <div className="border-b border-slate-100 bg-sunken/60 px-6 py-4">
+              <h2 className="text-base font-bold text-slate-900">Summary</h2>
             </div>
-            <div className="px-5 py-5 sm:px-6">
+            <div className="px-6 py-6">
               <dl className="space-y-3 text-sm">
                 <div className="flex items-center justify-between">
                   <dt className="text-slate-500">Items</dt>
                   <dd className="font-semibold tabular-nums text-slate-900">{itemCount}</dd>
                 </div>
                 <div className="flex items-baseline justify-between border-t border-slate-100 pt-4">
-                  <dt className="text-base font-semibold text-slate-900">Total</dt>
+                  <dt className="text-base font-bold text-slate-900">Total</dt>
                   <dd className="text-2xl font-extrabold tabular-nums tracking-tight text-slate-900">
                     {formatCurrency(total)}
                   </dd>

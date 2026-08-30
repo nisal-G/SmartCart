@@ -13,6 +13,7 @@ import { Pagination } from '../../components/common/Pagination';
 import { AdminCard, AdminCardList, AdminTable, Td, Th, Tr } from '../../components/admin/AdminTable';
 import productService from '../../services/productService';
 import categoryService from '../../services/categoryService';
+import { useToast } from '../../hooks/useToast';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { formatDate } from '../../utils/formatDate';
 import { ROUTES, adminProductEditPath } from '../../constants/routes';
@@ -28,6 +29,7 @@ const PAGE_SIZE = 10;
 export function AdminProducts() {
   const location = useLocation();
   const [flash] = useState(location.state?.flash || null);
+  const toast = useToast();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const page = parseInt(searchParams.get('page'), 10) || 1;
@@ -128,6 +130,7 @@ export function AdminProducts() {
       await productService.deleteProduct(productId);
       setConfirmingId(null);
       fetchProducts();
+      toast.success('Product deleted');
     } catch (err) {
       setDeleteError(err.message);
     } finally {
@@ -160,10 +163,12 @@ export function AdminProducts() {
 
       <form
         onSubmit={applyFilters}
-        className="mb-6 rounded-card border border-slate-200 bg-white p-4 shadow-card sm:p-5"
+        className="mb-6 rounded-card border border-slate-200/80 bg-white p-4 shadow-card sm:p-5"
       >
-        <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-700">
-          <Icon name="filter" size="sm" className="text-slate-400" />
+        <div className="mb-4 flex items-center gap-2.5 text-sm font-semibold text-slate-700">
+          <span className="flex h-7 w-7 items-center justify-center rounded-control bg-slate-100 text-slate-500">
+            <Icon name="filter" size="sm" />
+          </span>
           Filters
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">

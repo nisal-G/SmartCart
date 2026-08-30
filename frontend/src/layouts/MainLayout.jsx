@@ -11,7 +11,11 @@ export function MainLayout() {
   // AdminLayout) that fades only its content pane — wrapping the outlet
   // here too would key on the same full pathname and force the admin
   // sidebar to remount on every admin page change.
-  const isAdminArea = location.pathname.startsWith(ROUTES.ADMIN);
+  // /admin/login is intentionally excluded: it's a public sign-in page,
+  // not the authenticated admin console, so it should read like any other
+  // storefront page (see Navbar.jsx and Footer.jsx for the same check).
+  const isAdminArea =
+    location.pathname.startsWith(ROUTES.ADMIN) && location.pathname !== ROUTES.ADMIN_LOGIN;
 
   return (
     <div className="flex min-h-svh flex-col bg-canvas">

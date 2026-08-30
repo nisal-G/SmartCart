@@ -16,20 +16,21 @@ export function ErrorMessage({
   return (
     <div
       role="alert"
-      className="flex flex-col items-start gap-3 rounded-card border border-red-200 bg-red-50/70 p-4 text-left sm:flex-row sm:items-center sm:gap-4 sm:p-5"
+      className="flex animate-scale-in flex-col items-start gap-4 rounded-card border border-red-200 bg-linear-to-br from-red-50 to-white p-5 text-left shadow-card sm:flex-row sm:items-center sm:p-6"
     >
       <span
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600 ring-4 ring-red-50"
         aria-hidden="true"
       >
         <Icon name="alert" size="md" />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-red-900">{title}</p>
-        <p className="mt-0.5 text-sm text-red-800">{message}</p>
+        <p className="text-sm font-bold text-red-900">{title}</p>
+        <p className="mt-1 text-sm leading-relaxed text-red-800">{message}</p>
       </div>
       {onRetry && (
         <Button variant="outline" size="sm" onClick={onRetry} className="shrink-0">
+          <Icon name="refresh" size="sm" />
           Try again
         </Button>
       )}

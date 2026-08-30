@@ -31,6 +31,18 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'off',
+    // The app's own `html { scroll-behavior: smooth }` (see src/index.css)
+    // animates every scrollIntoView over several frames — including the
+    // one Playwright runs before each click. Mid-animation, a `position:
+    // sticky` table header (see AdminTable.jsx) can transiently overlap the
+    // scrolling target, which actionability then reports as "subtree
+    // intercepts pointer events" and can retry-loop to a timeout. Emulating
+    // reduced motion makes the browser take the exact same
+    // `@media (prefers-reduced-motion: reduce)` branch already built into
+    // index.css for real users who ask for it — scrolls become instant, so
+    // this is a test-harness-only opt-in, not a change to default app
+    // behavior.
+    reducedMotion: 'reduce',
   },
 
   // Never reuse an already-running dev server: it could be a real one

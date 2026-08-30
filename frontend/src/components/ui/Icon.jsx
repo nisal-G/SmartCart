@@ -45,6 +45,13 @@ const PATHS = {
   shield: <><path d="M12 3.5 19 6v6c0 4-3 7-7 8.5C8 19 5 16 5 12V6l7-2.5Z" /><path d="m9.5 12 1.8 1.8L15 10" /></>,
   logout: <><path d="M14 4h3.5A1.5 1.5 0 0 1 19 5.5v13a1.5 1.5 0 0 1-1.5 1.5H14" /><path d="M10 8 6 12l4 4" /><path d="M6 12h9" /></>,
   key: <><circle cx="8" cy="14" r="4" /><path d="m11 11 8-8" /><path d="m16.5 5.5 2 2" /><path d="m14 8 2 2" /></>,
+  clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3.2 2" /></>,
+  truck: <><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H14v10H3V7.5Z" /><path d="M14 10h3.6a1.5 1.5 0 0 1 1.3.75L21 14v2h-7v-6Z" /><circle cx="7.5" cy="18" r="1.8" /><circle cx="17" cy="18" r="1.8" /></>,
+  leaf: <><path d="M5 19c0-7 4.5-12 15-12 0 8-4.5 12-11 12H5Z" /><path d="M8.5 15.5c1.8-3 4-5 7.5-6.5" /></>,
+  sparkles: <><path d="m12 4 1.6 4.4L18 10l-4.4 1.6L12 16l-1.6-4.4L6 10l4.4-1.6L12 4Z" /><path d="M18.5 15.5 19 17l1.5.5L19 18l-.5 1.5L18 18l-1.5-.5L18 17l.5-1.5Z" /></>,
+  refresh: <><path d="M20 12a8 8 0 1 1-2.5-5.8" /><path d="M20 4v4h-4" /></>,
+  creditCard: <><rect x="3" y="5.5" width="18" height="13" rx="2.2" /><path d="M3 10h18" /><path d="M7 14.5h3" /></>,
+  headset: <><path d="M5 13v-1a7 7 0 0 1 14 0v1" /><path d="M5 13h1.8a1.2 1.2 0 0 1 1.2 1.2v2.6A1.2 1.2 0 0 1 6.8 18H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1Z" /><path d="M19 13h-1.8a1.2 1.2 0 0 0-1.2 1.2v2.6A1.2 1.2 0 0 0 17.2 18H19a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1Z" /></>,
   google: 'brand-google',
   facebook: 'brand-facebook',
 };

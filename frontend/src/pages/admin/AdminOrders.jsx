@@ -12,15 +12,11 @@ import { AdminCard, AdminCardList, AdminTable, Td, Th, Tr } from '../../componen
 import orderService from '../../services/orderService';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { formatDate } from '../../utils/formatDate';
+import { shortOrderId } from '../../utils/orderId';
 import { ORDER_STATUSES, formatStatusLabel } from '../../constants/orderStatuses';
 import { adminOrderDetailsPath } from '../../constants/routes';
 
 const PAGE_SIZE = 10;
-
-/** Last-8-characters, uppercased — same short id convention as the customer-facing OrderCard. */
-function shortOrderId(id) {
-  return `#${String(id).slice(-8).toUpperCase()}`;
-}
 
 /**
  * Admin order list (/admin/orders). Uses GET /api/orders/all's own
@@ -95,9 +91,11 @@ export function AdminOrders() {
         </p>
       </div>
 
-      <div className="mb-6 rounded-card border border-slate-200 bg-white p-4 shadow-card sm:p-5">
-        <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-700">
-          <Icon name="filter" size="sm" className="text-slate-400" />
+      <div className="mb-6 rounded-card border border-slate-200/80 bg-white p-4 shadow-card sm:p-5">
+        <div className="mb-4 flex items-center gap-2.5 text-sm font-semibold text-slate-700">
+          <span className="flex h-7 w-7 items-center justify-center rounded-control bg-slate-100 text-slate-500">
+            <Icon name="filter" size="sm" />
+          </span>
           Filters
         </div>
         <div className="max-w-xs">
