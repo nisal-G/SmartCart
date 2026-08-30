@@ -5,6 +5,7 @@ import { ProtectedRoute } from './ProtectedRoute';
 import { ROLES } from '../constants/roles';
 import { Home } from '../pages/Home';
 import { Login } from '../pages/Login';
+import { AdminLogin } from '../pages/admin/AdminLogin';
 import { AuthCallback } from '../pages/AuthCallback';
 import { Products } from '../pages/Products';
 import { ProductDetails } from '../pages/ProductDetails';
@@ -35,6 +36,7 @@ export function AppRoutes() {
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/products" element={<Products />} />
         <Route path="/products/:id" element={<ProductDetails />} />

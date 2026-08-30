@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Textarea } from '../../components/ui/Textarea';
+import { Icon } from '../../components/ui/Icon';
 import { Loading } from '../../components/common/Loading';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import categoryService from '../../services/categoryService';
@@ -131,7 +132,10 @@ export function AdminCategoryForm() {
       <div>
         <ErrorMessage message={loadError} />
         <div className="mt-6">
-          <Link to={ROUTES.ADMIN_CATEGORIES} className="text-sm font-medium text-indigo-600 hover:text-indigo-700">
+          <Link
+            to={ROUTES.ADMIN_CATEGORIES}
+            className="text-sm font-semibold text-brand-700 transition-colors hover:text-brand-800"
+          >
             ← Back to categories
           </Link>
         </div>
@@ -140,75 +144,118 @@ export function AdminCategoryForm() {
   }
 
   return (
-    <div className="max-w-2xl">
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-slate-900">
-          {isEditing ? 'Edit category' : 'Add category'}
-        </h2>
-        <Link to={ROUTES.ADMIN_CATEGORIES} className="text-sm font-medium text-indigo-600 hover:text-indigo-700">
+    <div className="max-w-3xl">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900">
+            {isEditing ? 'Edit category' : 'Add category'}
+          </h2>
+          <p className="mt-0.5 text-sm text-slate-500">
+            Categories group products for browsing in the storefront.
+          </p>
+        </div>
+        <Link
+          to={ROUTES.ADMIN_CATEGORIES}
+          className="text-sm font-semibold text-brand-700 transition-colors hover:text-brand-800"
+        >
           ← Back to categories
         </Link>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-6">
-        <Input label="Name" value={form.name} onChange={updateField('name')} error={fieldErrors.name} disabled={submitting} />
-
-        <Textarea
-          label="Description"
-          value={form.description}
-          onChange={updateField('description')}
-          error={fieldErrors.description}
-          disabled={submitting}
-        />
-
-        <div className="flex flex-col gap-3 rounded-md border border-slate-200 p-4">
-          <p className="text-sm font-medium text-slate-700">Image</p>
-
-          {currentImage && !imageFile && (
-            <div className="h-24 w-24 overflow-hidden rounded-md bg-slate-100">
-              <img src={currentImage} alt="Current category" className="h-full w-full object-cover" />
-            </div>
-          )}
-          {imageFile && <p className="text-sm text-slate-500">Selected file: {imageFile.name}</p>}
-
+      <form
+        onSubmit={handleSubmit}
+        className="overflow-hidden rounded-card border border-slate-200/80 bg-white shadow-card"
+      >
+        <div className="flex flex-col gap-5 p-5 sm:p-6">
           <Input
-            label="Image URL"
-            placeholder="https://…"
-            value={form.imageUrl}
-            onChange={updateField('imageUrl')}
-            disabled={submitting || Boolean(imageFile)}
+            label="Name"
+            placeholder="e.g. Vegetables"
+            value={form.name}
+            onChange={updateField('name')}
+            error={fieldErrors.name}
+            disabled={submitting}
           />
 
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-slate-700" htmlFor="category-image-file">
-              Or upload an image file
-            </label>
-            <input
-              id="category-image-file"
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              onChange={handleFileChange}
-              disabled={submitting}
-              className="text-sm text-slate-600"
-            />
-            {imageFile && (
-              <button
-                type="button"
-                className="mt-1 self-start text-xs font-medium text-indigo-600 hover:text-indigo-700"
-                onClick={() => setImageFile(null)}
+          <Textarea
+            label="Description"
+            placeholder="Optional — a short line describing what belongs in this category."
+            value={form.description}
+            onChange={updateField('description')}
+            error={fieldErrors.description}
+            disabled={submitting}
+          />
+
+          <fieldset className="rounded-card border border-dashed border-slate-300 bg-slate-50/50 p-4">
+            <legend className="flex items-center gap-2 px-1 text-sm font-semibold text-slate-700">
+              <span
+                className="flex h-6 w-6 items-center justify-center rounded-md bg-white text-slate-500 ring-1 ring-slate-200"
+                aria-hidden="true"
               >
-                Remove selected file
-              </button>
-            )}
-          </div>
-          <p className="text-xs text-slate-400">
-            A selected file takes precedence over the image URL above.
-          </p>
+                <Icon name="tag" size="xs" />
+              </span>
+              Image
+            </legend>
+
+            <div className="mt-1 flex flex-col gap-4">
+              {currentImage && !imageFile && (
+                <div className="flex items-center gap-3">
+                  <div className="h-20 w-20 overflow-hidden rounded-control bg-white ring-1 ring-slate-200">
+                    <img
+                      src={currentImage}
+                      alt="Current category"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <p className="text-sm text-slate-500">Current image</p>
+                </div>
+              )}
+              {imageFile && (
+                <p className="flex items-center gap-2 text-sm text-slate-600">
+                  <Icon name="check" size="sm" className="text-brand-600" />
+                  Selected file: {imageFile.name}
+                </p>
+              )}
+
+              <Input
+                label="Image URL"
+                placeholder="https://…"
+                value={form.imageUrl}
+                onChange={updateField('imageUrl')}
+                disabled={submitting || Boolean(imageFile)}
+              />
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-slate-700" htmlFor="category-image-file">
+                  Or upload an image file
+                </label>
+                <input
+                  id="category-image-file"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={handleFileChange}
+                  disabled={submitting}
+                  className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-control file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-slate-800"
+                />
+                {imageFile && (
+                  <button
+                    type="button"
+                    className="mt-1 self-start text-xs font-semibold text-brand-700 hover:text-brand-800"
+                    onClick={() => setImageFile(null)}
+                  >
+                    Remove selected file
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-slate-500">
+                A selected file takes precedence over the image URL above.
+              </p>
+            </div>
+          </fieldset>
+
+          {submitError && <ErrorMessage message={submitError} />}
         </div>
 
-        {submitError && <ErrorMessage message={submitError} />}
-
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 border-t border-slate-200 bg-slate-50/60 px-5 py-4 sm:px-6">
           <Button type="submit" loading={submitting} disabled={submitting}>
             {isEditing ? 'Save changes' : 'Add category'}
           </Button>

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
+import { Icon } from '../../components/ui/Icon';
 import { Loading } from '../../components/common/Loading';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { SuccessMessage } from '../../components/common/SuccessMessage';
@@ -26,6 +27,41 @@ import { ROUTES } from '../../constants/routes';
  * here: it is written exclusively by the PayHere notification flow
  * (backend/src/controllers/paymentController.js), never by this page.
  */
+
+/** Small icon chip preceding a section's h3 — purely decorative, keeps
+ * every card on this page reading as part of the same system. */
+function SectionHeading({ icon, children }) {
+  return (
+    <h3 className="flex items-center gap-2.5 text-base font-bold text-slate-900">
+      <span
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-control bg-brand-50 text-brand-700"
+        aria-hidden="true"
+      >
+        <Icon name={icon} size="sm" />
+      </span>
+      {children}
+    </h3>
+  );
+}
+
+/** One label/value pair in the order-information grid. */
+function Detail({ label, children, mono = false }) {
+  return (
+    <div>
+      <dt className="text-slate-500">{label}</dt>
+      <dd
+        className={
+          mono
+            ? 'mt-1 break-all font-mono text-xs font-semibold text-slate-900'
+            : 'mt-1 font-semibold text-slate-900'
+        }
+      >
+        {children}
+      </dd>
+    </div>
+  );
+}
+
 export function AdminOrderDetails() {
   const { id } = useParams();
 
@@ -98,7 +134,7 @@ export function AdminOrderDetails() {
         <div className="mt-6">
           <Link
             to={ROUTES.ADMIN_ORDERS}
-            className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+            className="text-sm font-semibold text-brand-700 transition-colors hover:text-brand-800"
           >
             ← Back to orders
           </Link>
@@ -108,14 +144,20 @@ export function AdminOrderDetails() {
   }
 
   const { _id, items, total, status, payment, user, createdAt, updatedAt } = order;
+  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <h2 className="text-lg font-semibold text-slate-900">Order details</h2>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900">Order details</h2>
+          <p className="mt-0.5 text-sm text-slate-500">
+            {formatDate(createdAt)} · {itemCount} {itemCount === 1 ? 'item' : 'items'}
+          </p>
+        </div>
         <Link
           to={ROUTES.ADMIN_ORDERS}
-          className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+          className="text-sm font-semibold text-brand-700 transition-colors hover:text-brand-800"
         >
           ← Back to orders
         </Link>
@@ -126,112 +168,92 @@ export function AdminOrderDetails() {
             item name's nowrap intrinsic width can otherwise widen this
             grid track past the viewport on narrow screens. */}
         <div className="min-w-0 space-y-6 lg:col-span-2">
-          <div className="rounded-lg border border-slate-200 bg-white p-6">
-            <h3 className="mb-4 text-base font-semibold text-slate-900">Order information</h3>
-            <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
-              <div>
-                <dt className="text-slate-500">Order ID</dt>
-                <dd className="mt-0.5 break-all font-mono text-xs font-medium text-slate-900">{_id}</dd>
-              </div>
-              <div>
-                <dt className="text-slate-500">Placed on</dt>
-                <dd className="mt-0.5 font-medium text-slate-900">{formatDate(createdAt)}</dd>
-              </div>
+          <section className="rounded-card border border-slate-200/80 bg-white p-5 shadow-card sm:p-6">
+            <SectionHeading icon="info">Order information</SectionHeading>
+            <dl className="mt-4 grid grid-cols-1 gap-5 text-sm sm:grid-cols-2">
+              <Detail label="Order ID" mono>
+                {_id}
+              </Detail>
+              <Detail label="Placed on">{formatDate(createdAt)}</Detail>
               {updatedAt && updatedAt !== createdAt && (
-                <div>
-                  <dt className="text-slate-500">Last updated</dt>
-                  <dd className="mt-0.5 font-medium text-slate-900">{formatDate(updatedAt)}</dd>
-                </div>
+                <Detail label="Last updated">{formatDate(updatedAt)}</Detail>
               )}
               <div>
                 <dt className="text-slate-500">Order status</dt>
-                <dd className="mt-1">
+                <dd className="mt-1.5">
                   <OrderStatusBadge status={status} type="order" />
                 </dd>
               </div>
               {payment?.status && (
                 <div>
                   <dt className="text-slate-500">Payment status</dt>
-                  <dd className="mt-1">
+                  <dd className="mt-1.5">
                     <OrderStatusBadge status={payment.status} type="payment" />
                   </dd>
                 </div>
               )}
               {payment?.provider && (
-                <div>
-                  <dt className="text-slate-500">Payment provider</dt>
-                  <dd className="mt-0.5 font-medium capitalize text-slate-900">{payment.provider}</dd>
-                </div>
+                <Detail label="Payment provider">
+                  <span className="capitalize">{payment.provider}</span>
+                </Detail>
               )}
-              {payment?.method && (
-                <div>
-                  <dt className="text-slate-500">Payment method</dt>
-                  <dd className="mt-0.5 font-medium text-slate-900">{payment.method}</dd>
-                </div>
-              )}
+              {payment?.method && <Detail label="Payment method">{payment.method}</Detail>}
               {payment?.paymentId && (
-                <div>
-                  <dt className="text-slate-500">Payment ID</dt>
-                  <dd className="mt-0.5 break-all font-mono text-xs font-medium text-slate-900">
-                    {payment.paymentId}
-                  </dd>
-                </div>
+                <Detail label="Payment ID" mono>
+                  {payment.paymentId}
+                </Detail>
               )}
               {payment?.amount != null && (
-                <div>
-                  <dt className="text-slate-500">Payment amount</dt>
-                  <dd className="mt-0.5 font-medium text-slate-900">
-                    {formatCurrency(payment.amount, payment.currency)}
-                  </dd>
-                </div>
+                <Detail label="Payment amount">
+                  {formatCurrency(payment.amount, payment.currency)}
+                </Detail>
               )}
             </dl>
-          </div>
+          </section>
 
           {user && (user.name || user.email) && (
-            <div className="rounded-lg border border-slate-200 bg-white p-6">
-              <h3 className="mb-4 text-base font-semibold text-slate-900">Customer</h3>
-              <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
-                {user.name && (
-                  <div>
-                    <dt className="text-slate-500">Name</dt>
-                    <dd className="mt-0.5 font-medium text-slate-900">{user.name}</dd>
-                  </div>
-                )}
+            <section className="rounded-card border border-slate-200/80 bg-white p-5 shadow-card sm:p-6">
+              <SectionHeading icon="user">Customer</SectionHeading>
+              <dl className="mt-4 grid grid-cols-1 gap-5 text-sm sm:grid-cols-2">
+                {user.name && <Detail label="Name">{user.name}</Detail>}
                 {user.email && (
-                  <div>
-                    <dt className="text-slate-500">Email</dt>
-                    <dd className="mt-0.5 break-all font-medium text-slate-900">{user.email}</dd>
-                  </div>
+                  <Detail label="Email">
+                    <span className="break-all">{user.email}</span>
+                  </Detail>
                 )}
               </dl>
-            </div>
+            </section>
           )}
 
-          <div className="rounded-lg border border-slate-200 bg-white px-4 sm:px-6">
-            <h3 className="pt-6 text-base font-semibold text-slate-900">Items</h3>
-            <ul className="divide-y divide-slate-200">
+          <section className="rounded-card border border-slate-200/80 bg-white p-5 shadow-card sm:p-6">
+            <SectionHeading icon="package">Items</SectionHeading>
+            <ul className="mt-2 divide-y divide-slate-100">
               {items.map((item, index) => (
                 <OrderItem key={`${item.product}-${index}`} item={item} />
               ))}
             </ul>
-          </div>
+          </section>
         </div>
 
         <div className="space-y-6 lg:col-span-1">
-          <div className="rounded-lg border border-slate-200 bg-white p-6">
-            <h3 className="text-base font-semibold text-slate-900">Total</h3>
-            <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-2 text-base font-semibold">
-              <span className="text-slate-900">Total</span>
-              <span className="text-slate-900">{formatCurrency(total)}</span>
+          <div className="rounded-card border border-slate-200/80 bg-white p-5 shadow-card sm:p-6">
+            <SectionHeading icon="receipt">Summary</SectionHeading>
+            <div className="mt-4 flex items-baseline justify-between border-t border-slate-100 pt-4">
+              <span className="text-sm font-semibold text-slate-900">Total</span>
+              <span className="text-2xl font-extrabold tabular-nums tracking-tight text-slate-900">
+                {formatCurrency(total)}
+              </span>
             </div>
           </div>
 
           <form
             onSubmit={handleUpdateStatus}
-            className="rounded-lg border border-slate-200 bg-white p-6"
+            className="rounded-card border border-slate-200/80 bg-white p-5 shadow-card sm:p-6"
           >
-            <h3 className="mb-4 text-base font-semibold text-slate-900">Order status</h3>
+            <SectionHeading icon="clock">Order status</SectionHeading>
+            <p className="mb-4 mt-1 text-sm text-slate-500">
+              Fulfilment state only — this never changes the payment.
+            </p>
 
             <Select
               label="Status"
@@ -255,9 +277,7 @@ export function AdminOrderDetails() {
               </div>
             )}
             {updateSuccess && (
-              <div className="mt-4">
-                <SuccessMessage message="Order status updated successfully." />
-              </div>
+              <SuccessMessage message="Order status updated successfully." className="mt-4" />
             )}
 
             <Button
@@ -270,7 +290,8 @@ export function AdminOrderDetails() {
               Update status
             </Button>
 
-            <p className="mt-3 text-xs text-slate-400">
+            <p className="mt-3 flex items-start gap-1.5 text-xs text-slate-500">
+              <Icon name="info" size="xs" className="mt-0.5 shrink-0 text-slate-400" />
               Payment status is set automatically by PayHere and can&apos;t be changed here.
             </p>
           </form>

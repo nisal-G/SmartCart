@@ -2,13 +2,17 @@ import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
-import { Loading } from '../../components/common/Loading';
+import { Icon } from '../../components/ui/Icon';
+import { Badge } from '../../components/ui/Badge';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { EmptyState } from '../../components/common/EmptyState';
+import { TableSkeleton } from '../../components/common/skeletons';
+import { Pagination } from '../../components/common/Pagination';
+import { AdminCard, AdminCardList, AdminTable, Td, Th, Tr } from '../../components/admin/AdminTable';
 import userService from '../../services/userService';
 import { useAuth } from '../../hooks/useAuth';
+import { useToast } from '../../hooks/useToast';
 import { formatDate } from '../../utils/formatDate';
-import { classNames } from '../../utils/classNames';
 
 const PAGE_SIZE = 10;
 
@@ -18,21 +22,37 @@ const PAGE_SIZE = 10;
 const ROLE_OPTIONS = ['user', 'admin'];
 const STATUS_OPTIONS = ['pending', 'active', 'suspended'];
 
-const STATUS_TONE_CLASSES = {
-  active: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-  suspended: 'border-red-200 bg-red-50 text-red-800',
-  pending: 'border-amber-200 bg-amber-50 text-amber-800',
+const STATUS_TONES = {
+  active: 'success',
+  suspended: 'danger',
+  pending: 'warning',
 };
 
 function StatusBadge({ status }) {
   return (
-    <span
-      className={classNames(
-        'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize',
-        STATUS_TONE_CLASSES[status] || 'border-slate-200 bg-slate-50 text-slate-700'
-      )}
-    >
+    <Badge tone={STATUS_TONES[status] || 'neutral'} size="sm" className="capitalize">
       {status}
+    </Badge>
+  );
+}
+
+/** Initials avatar — a name is always present on a User (see the model). */
+function Avatar({ name }) {
+  const initials = String(name || '?')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase();
+
+  return (
+    <span
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600"
+      aria-hidden="true"
+    >
+      {initials || '?'}
     </span>
   );
 }
@@ -48,6 +68,7 @@ function StatusBadge({ status }) {
  */
 export function AdminUsers() {
   const { user: currentUser } = useAuth();
+  const toast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const page = parseInt(searchParams.get('page'), 10) || 1;
   const role = searchParams.get('role') || '';
@@ -117,6 +138,7 @@ export function AdminUsers() {
       const updated = await userService.updateUserStatus(userId, nextStatus);
       setUsers((prev) => prev.map((u) => (u._id === userId ? updated : u)));
       setConfirmingId(null);
+      toast.success(nextStatus === 'suspended' ? 'User suspended' : 'User reactivated');
     } catch (err) {
       setActionError(err.message);
     } finally {
@@ -128,45 +150,57 @@ export function AdminUsers() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <h2 className="text-lg font-semibold text-slate-900">Users</h2>
+      <div className="mb-5">
+        <h2 className="text-lg font-bold text-slate-900">Users</h2>
+        <p className="mt-0.5 text-sm text-slate-500">
+          {pagination?.total != null
+            ? `${pagination.total} account${pagination.total === 1 ? '' : 's'}${hasFilters ? ' matching these filters' : ''}`
+            : 'Customer and administrator accounts'}
+        </p>
       </div>
 
-      <div className="mb-6 grid gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-2 sm:max-w-md">
-        <Select
-          label="Role"
-          value={role}
-          onChange={(e) => updateFilters({ role: e.target.value })}
-        >
-          <option value="">All roles</option>
-          {ROLE_OPTIONS.map((r) => (
-            <option key={r} value={r} className="capitalize">
-              {r}
-            </option>
-          ))}
-        </Select>
-        <Select
-          label="Status"
-          value={status}
-          onChange={(e) => updateFilters({ status: e.target.value })}
-        >
-          <option value="">All statuses</option>
-          {STATUS_OPTIONS.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </Select>
+      <div className="mb-6 rounded-card border border-slate-200/80 bg-white p-4 shadow-card sm:p-5">
+        <div className="mb-4 flex items-center gap-2.5 text-sm font-semibold text-slate-700">
+          <span className="flex h-7 w-7 items-center justify-center rounded-control bg-slate-100 text-slate-500">
+            <Icon name="filter" size="sm" />
+          </span>
+          Filters
+        </div>
+        <div className="grid gap-4 sm:max-w-md sm:grid-cols-2">
+          <Select label="Role" value={role} onChange={(e) => updateFilters({ role: e.target.value })}>
+            <option value="">All roles</option>
+            {ROLE_OPTIONS.map((r) => (
+              <option key={r} value={r} className="capitalize">
+                {r}
+              </option>
+            ))}
+          </Select>
+          <Select
+            label="Status"
+            value={status}
+            onChange={(e) => updateFilters({ status: e.target.value })}
+          >
+            <option value="">All statuses</option>
+            {STATUS_OPTIONS.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </Select>
+        </div>
       </div>
 
-      {loading && <Loading label="Loading users…" />}
+      {loading && <TableSkeleton rows={PAGE_SIZE} columns={5} />}
 
       {!loading && error && <ErrorMessage message={error} onRetry={fetchUsers} />}
 
       {!loading && !error && users.length === 0 && (
         <EmptyState
+          icon="users"
           title="No users found"
-          description={hasFilters ? 'No accounts match this filter.' : 'No accounts have registered yet.'}
+          description={
+            hasFilters ? 'No accounts match this filter.' : 'No accounts have registered yet.'
+          }
         />
       )}
 
@@ -179,37 +213,34 @@ export function AdminUsers() {
           )}
 
           {/* Desktop / tablet table */}
-          <div className="hidden overflow-x-auto rounded-lg border border-slate-200 bg-white md:block">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Name</th>
-                  <th className="px-4 py-3 font-medium">Email</th>
-                  <th className="px-4 py-3 font-medium">Role</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Joined</th>
-                  <th className="px-4 py-3 font-medium text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {users.map((user) => (
-                  <UserRow
-                    key={user._id}
-                    user={user}
-                    isSelf={user._id === currentUser?._id}
-                    isConfirming={confirmingId === user._id}
-                    isUpdating={updatingId === user._id}
-                    onActionClick={() => setConfirmingId(user._id)}
-                    onCancel={() => setConfirmingId(null)}
-                    onConfirm={(nextStatus) => handleSetStatus(user._id, nextStatus)}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <AdminTable
+            head={
+              <>
+                <Th>Name</Th>
+                <Th>Email</Th>
+                <Th>Role</Th>
+                <Th>Status</Th>
+                <Th>Joined</Th>
+                <Th align="right">Actions</Th>
+              </>
+            }
+          >
+            {users.map((user) => (
+              <UserRow
+                key={user._id}
+                user={user}
+                isSelf={user._id === currentUser?._id}
+                isConfirming={confirmingId === user._id}
+                isUpdating={updatingId === user._id}
+                onActionClick={() => setConfirmingId(user._id)}
+                onCancel={() => setConfirmingId(null)}
+                onConfirm={(nextStatus) => handleSetStatus(user._id, nextStatus)}
+              />
+            ))}
+          </AdminTable>
 
           {/* Mobile cards */}
-          <div className="flex flex-col gap-3 md:hidden">
+          <AdminCardList>
             {users.map((user) => (
               <UserCard
                 key={user._id}
@@ -222,31 +253,9 @@ export function AdminUsers() {
                 onConfirm={(nextStatus) => handleSetStatus(user._id, nextStatus)}
               />
             ))}
-          </div>
+          </AdminCardList>
 
-          {pagination && pagination.totalPages > 1 && (
-            <div className="mt-6 flex items-center justify-center gap-4">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={pagination.page <= 1}
-                onClick={() => goToPage(pagination.page - 1)}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-slate-600">
-                Page {pagination.page} of {pagination.totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={pagination.page >= pagination.totalPages}
-                onClick={() => goToPage(pagination.page + 1)}
-              >
-                Next
-              </Button>
-            </div>
-          )}
+          <Pagination pagination={pagination} onPageChange={goToPage} className="mt-6" />
         </>
       )}
     </div>
@@ -256,7 +265,7 @@ export function AdminUsers() {
 /** Suspend/reactivate control, inline-confirmed the same way Products/Categories confirm delete. Hidden entirely for the signed-in admin's own row — the backend refuses that change anyway. */
 function StatusAction({ user, isSelf, isConfirming, isUpdating, onActionClick, onCancel, onConfirm }) {
   if (isSelf) {
-    return <span className="text-xs text-slate-400">This is you</span>;
+    return <span className="text-xs font-medium text-slate-400">This is you</span>;
   }
 
   const nextStatus = user.status === 'suspended' ? 'active' : 'suspended';
@@ -291,15 +300,22 @@ function StatusAction({ user, isSelf, isConfirming, isUpdating, onActionClick, o
 function UserRow({ user, isSelf, isConfirming, isUpdating, onActionClick, onCancel, onConfirm }) {
   const { name, email, role, status, createdAt } = user;
   return (
-    <tr>
-      <td className="px-4 py-3 font-medium text-slate-900">{name}</td>
-      <td className="px-4 py-3 text-slate-700">{email}</td>
-      <td className="px-4 py-3 capitalize text-slate-700">{role}</td>
-      <td className="px-4 py-3">
+    <Tr>
+      <Td>
+        <div className="flex items-center gap-3">
+          <Avatar name={name} />
+          <span className="font-semibold text-slate-900">{name}</span>
+        </div>
+      </Td>
+      <Td className="text-slate-600">{email}</Td>
+      <Td>
+        <span className="capitalize text-slate-700">{role}</span>
+      </Td>
+      <Td>
         <StatusBadge status={status} />
-      </td>
-      <td className="px-4 py-3 text-slate-500">{formatDate(createdAt)}</td>
-      <td className="px-4 py-3 text-right">
+      </Td>
+      <Td className="whitespace-nowrap text-slate-500">{formatDate(createdAt)}</Td>
+      <Td align="right">
         <StatusAction
           user={user}
           isSelf={isSelf}
@@ -309,35 +325,38 @@ function UserRow({ user, isSelf, isConfirming, isUpdating, onActionClick, onCanc
           onCancel={onCancel}
           onConfirm={onConfirm}
         />
-      </td>
-    </tr>
+      </Td>
+    </Tr>
   );
 }
 
 function UserCard({ user, isSelf, isConfirming, isUpdating, onActionClick, onCancel, onConfirm }) {
   const { name, email, role, status, createdAt } = user;
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
+    <AdminCard>
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate font-medium text-slate-900">{name}</p>
-          <p className="truncate text-sm text-slate-500">{email}</p>
+        <div className="flex min-w-0 items-center gap-3">
+          <Avatar name={name} />
+          <div className="min-w-0">
+            <p className="truncate font-semibold text-slate-900">{name}</p>
+            <p className="truncate text-sm text-slate-500">{email}</p>
+          </div>
         </div>
         <StatusBadge status={status} />
       </div>
 
-      <dl className="mt-3 space-y-1 text-sm">
-        <div className="flex items-center gap-1.5">
+      <dl className="mt-3 space-y-1.5 text-sm">
+        <div className="flex items-center gap-2">
           <dt className="text-slate-500">Role</dt>
           <dd className="font-medium capitalize text-slate-900">{role}</dd>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <dt className="text-slate-500">Joined</dt>
           <dd className="font-medium text-slate-900">{formatDate(createdAt)}</dd>
         </div>
       </dl>
 
-      <div className="mt-3 flex justify-end">
+      <div className="mt-3 flex justify-end border-t border-slate-100 pt-3">
         <StatusAction
           user={user}
           isSelf={isSelf}
@@ -348,6 +367,6 @@ function UserCard({ user, isSelf, isConfirming, isUpdating, onActionClick, onCan
           onConfirm={onConfirm}
         />
       </div>
-    </div>
+    </AdminCard>
   );
 }

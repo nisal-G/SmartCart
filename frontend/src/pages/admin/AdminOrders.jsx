@@ -2,22 +2,21 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
-import { Loading } from '../../components/common/Loading';
+import { Icon } from '../../components/ui/Icon';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { EmptyState } from '../../components/common/EmptyState';
 import { OrderStatusBadge } from '../../components/common/OrderStatusBadge';
+import { TableSkeleton } from '../../components/common/skeletons';
+import { Pagination } from '../../components/common/Pagination';
+import { AdminCard, AdminCardList, AdminTable, Td, Th, Tr } from '../../components/admin/AdminTable';
 import orderService from '../../services/orderService';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { formatDate } from '../../utils/formatDate';
+import { shortOrderId } from '../../utils/orderId';
 import { ORDER_STATUSES, formatStatusLabel } from '../../constants/orderStatuses';
 import { adminOrderDetailsPath } from '../../constants/routes';
 
 const PAGE_SIZE = 10;
-
-/** Last-8-characters, uppercased — same short id convention as the customer-facing OrderCard. */
-function shortOrderId(id) {
-  return `#${String(id).slice(-8).toUpperCase()}`;
-}
 
 /**
  * Admin order list (/admin/orders). Uses GET /api/orders/all's own
@@ -83,27 +82,41 @@ export function AdminOrders() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <h2 className="text-lg font-semibold text-slate-900">Orders</h2>
+      <div className="mb-5">
+        <h2 className="text-lg font-bold text-slate-900">Orders</h2>
+        <p className="mt-0.5 text-sm text-slate-500">
+          {pagination?.total != null
+            ? `${pagination.total} order${pagination.total === 1 ? '' : 's'}${hasFilters ? ' matching this filter' : ''}`
+            : 'Customer orders and their payment state'}
+        </p>
       </div>
 
-      <div className="mb-6 max-w-xs rounded-lg border border-slate-200 bg-white p-4">
-        <Select label="Order status" value={status} onChange={handleStatusChange}>
-          <option value="">All statuses</option>
-          {ORDER_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {formatStatusLabel(s)}
-            </option>
-          ))}
-        </Select>
+      <div className="mb-6 rounded-card border border-slate-200/80 bg-white p-4 shadow-card sm:p-5">
+        <div className="mb-4 flex items-center gap-2.5 text-sm font-semibold text-slate-700">
+          <span className="flex h-7 w-7 items-center justify-center rounded-control bg-slate-100 text-slate-500">
+            <Icon name="filter" size="sm" />
+          </span>
+          Filters
+        </div>
+        <div className="max-w-xs">
+          <Select label="Order status" value={status} onChange={handleStatusChange}>
+            <option value="">All statuses</option>
+            {ORDER_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {formatStatusLabel(s)}
+              </option>
+            ))}
+          </Select>
+        </div>
       </div>
 
-      {loading && <Loading label="Loading orders…" />}
+      {loading && <TableSkeleton rows={PAGE_SIZE} columns={6} />}
 
       {!loading && error && <ErrorMessage message={error} onRetry={fetchOrders} />}
 
       {!loading && !error && orders.length === 0 && (
         <EmptyState
+          icon="receipt"
           title="No orders found"
           description={
             hasFilters
@@ -116,58 +129,33 @@ export function AdminOrders() {
       {!loading && !error && orders.length > 0 && (
         <>
           {/* Desktop / tablet table */}
-          <div className="hidden overflow-x-auto rounded-lg border border-slate-200 bg-white md:block">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Order</th>
-                  <th className="px-4 py-3 font-medium">Customer</th>
-                  <th className="px-4 py-3 font-medium">Date</th>
-                  <th className="px-4 py-3 font-medium">Items</th>
-                  <th className="px-4 py-3 font-medium">Total</th>
-                  <th className="px-4 py-3 font-medium">Order status</th>
-                  <th className="px-4 py-3 font-medium">Payment</th>
-                  <th className="px-4 py-3 font-medium text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {orders.map((order) => (
-                  <OrderRow key={order._id} order={order} />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <AdminTable
+            head={
+              <>
+                <Th>Order</Th>
+                <Th>Customer</Th>
+                <Th>Date</Th>
+                <Th>Items</Th>
+                <Th>Total</Th>
+                <Th>Order status</Th>
+                <Th>Payment</Th>
+                <Th align="right">Actions</Th>
+              </>
+            }
+          >
+            {orders.map((order) => (
+              <OrderRow key={order._id} order={order} />
+            ))}
+          </AdminTable>
 
           {/* Mobile cards */}
-          <div className="flex flex-col gap-3 md:hidden">
+          <AdminCardList>
             {orders.map((order) => (
               <OrderRowCard key={order._id} order={order} />
             ))}
-          </div>
+          </AdminCardList>
 
-          {pagination && pagination.totalPages > 1 && (
-            <div className="mt-6 flex items-center justify-center gap-4">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={pagination.page <= 1}
-                onClick={() => goToPage(pagination.page - 1)}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-slate-600">
-                Page {pagination.page} of {pagination.totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={pagination.page >= pagination.totalPages}
-                onClick={() => goToPage(pagination.page + 1)}
-              >
-                Next
-              </Button>
-            </div>
-          )}
+          <Pagination pagination={pagination} onPageChange={goToPage} className="mt-6" />
         </>
       )}
     </div>
@@ -179,31 +167,29 @@ function OrderRow({ order }) {
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <tr>
-      <td className="px-4 py-3 font-mono text-xs font-medium text-slate-900" title={_id}>
+    <Tr>
+      <Td className="font-mono text-xs font-semibold text-slate-900" title={_id}>
         {shortOrderId(_id)}
-      </td>
-      <td className="px-4 py-3 text-slate-700">
-        {user?.name || user?.email || '—'}
+      </Td>
+      <Td className="text-slate-700">
+        <span className="font-medium">{user?.name || user?.email || '—'}</span>
         {user?.name && user?.email && <p className="text-xs text-slate-400">{user.email}</p>}
-      </td>
-      <td className="px-4 py-3 text-slate-500">{formatDate(createdAt)}</td>
-      <td className="px-4 py-3 text-slate-700">{itemCount}</td>
-      <td className="px-4 py-3 text-slate-700">{formatCurrency(total)}</td>
-      <td className="px-4 py-3">
+      </Td>
+      <Td className="whitespace-nowrap text-slate-500">{formatDate(createdAt)}</Td>
+      <Td className="tabular-nums text-slate-700">{itemCount}</Td>
+      <Td className="font-medium tabular-nums text-slate-900">{formatCurrency(total)}</Td>
+      <Td>
         <OrderStatusBadge status={status} type="order" />
-      </td>
-      <td className="px-4 py-3">
-        {payment?.status && <OrderStatusBadge status={payment.status} type="payment" />}
-      </td>
-      <td className="px-4 py-3 text-right">
+      </Td>
+      <Td>{payment?.status && <OrderStatusBadge status={payment.status} type="payment" />}</Td>
+      <Td align="right">
         <Link to={adminOrderDetailsPath(_id)}>
           <Button variant="outline" size="sm">
             View details
           </Button>
         </Link>
-      </td>
-    </tr>
+      </Td>
+    </Tr>
   );
 }
 
@@ -212,13 +198,13 @@ function OrderRowCard({ order }) {
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
+    <AdminCard>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-mono text-sm font-medium text-slate-900" title={_id}>
+          <p className="font-mono text-sm font-semibold text-slate-900" title={_id}>
             {shortOrderId(_id)}
           </p>
-          <p className="text-xs text-slate-500">{formatDate(createdAt)}</p>
+          <p className="mt-0.5 text-xs text-slate-500">{formatDate(createdAt)}</p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
           <OrderStatusBadge status={status} type="order" />
@@ -226,30 +212,30 @@ function OrderRowCard({ order }) {
         </div>
       </div>
 
-      <dl className="mt-3 space-y-1 text-sm">
+      <dl className="mt-3 space-y-1.5 text-sm">
         {(user?.name || user?.email) && (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <dt className="text-slate-500">Customer</dt>
             <dd className="truncate font-medium text-slate-900">{user.name || user.email}</dd>
           </div>
         )}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <dt className="text-slate-500">Items</dt>
-          <dd className="font-medium text-slate-900">{itemCount}</dd>
+          <dd className="font-medium tabular-nums text-slate-900">{itemCount}</dd>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <dt className="text-slate-500">Total</dt>
-          <dd className="font-medium text-slate-900">{formatCurrency(total)}</dd>
+          <dd className="font-medium tabular-nums text-slate-900">{formatCurrency(total)}</dd>
         </div>
       </dl>
 
-      <div className="mt-3 flex justify-end">
+      <div className="mt-3 flex justify-end border-t border-slate-100 pt-3">
         <Link to={adminOrderDetailsPath(_id)}>
           <Button variant="outline" size="sm">
             View details
           </Button>
         </Link>
       </div>
-    </div>
+    </AdminCard>
   );
 }

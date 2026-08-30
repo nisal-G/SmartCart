@@ -1,12 +1,21 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PageWrapper } from '../components/ui/PageWrapper';
-import { Button } from '../components/ui/Button';
-import { Loading } from '../components/common/Loading';
+import { Icon } from '../components/ui/Icon';
+import { SectionHeading } from '../components/ui/SectionHeading';
+import { HeroSection } from '../components/home/HeroSection';
+import { TrustRow } from '../components/home/TrustRow';
+import { CategoryShowcase } from '../components/home/CategoryShowcase';
+import { HowItWorks } from '../components/home/HowItWorks';
+import { ClosingCta } from '../components/home/ClosingCta';
+import { Reveal } from '../components/motion/Reveal';
 import { ProductGrid } from '../components/common/ProductGrid';
+import { ProductGridSkeleton } from '../components/common/skeletons';
 import productService from '../services/productService';
 import categoryService from '../services/categoryService';
 import { ROUTES } from '../constants/routes';
+
+const FEATURED_LIMIT = 8;
 
 /** Shopping homepage: intro, category browsing entry points, and a small recent-products preview. */
 export function Home() {
@@ -25,7 +34,7 @@ export function Home() {
       })
       .catch(() => {});
     productService
-      .getProducts({ limit: 4 })
+      .getProducts({ limit: FEATURED_LIMIT })
       .then((data) => {
         if (!ignore) setFeaturedProducts(data.products);
       })
@@ -39,70 +48,43 @@ export function Home() {
   }, []);
 
   return (
-    <PageWrapper>
-      <section className="flex flex-col items-center gap-4 py-8 text-center sm:py-12">
-        <h1 className="text-3xl font-semibold text-slate-900 sm:text-4xl">
-          Welcome to SmartCart
-        </h1>
-        <p className="max-w-xl text-slate-600">
-          Fresh vegetables, fruits, cakes, and biscuits — browse the catalog and build your cart
-          in minutes.
-        </p>
-        <Link to={ROUTES.PRODUCTS}>
-          <Button size="lg">Browse products</Button>
-        </Link>
-      </section>
+    <PageWrapper className="pt-4 sm:pt-6">
+      <HeroSection showCategoriesCta={categories.length > 0} />
+      <TrustRow />
 
-      {categories.length > 0 && (
-        <section className="py-8">
-          <h2 className="mb-4 text-xl font-semibold text-slate-900">Shop by category</h2>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-            {categories.map((category) => (
-              <Link
-                key={category._id}
-                to={`${ROUTES.PRODUCTS}?category=${category._id}`}
-                className="group flex flex-col items-center gap-2 rounded-lg border border-slate-200 bg-white p-4 text-center shadow-sm transition-shadow hover:shadow-md"
-              >
-                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-slate-100">
-                  {category.image ? (
-                    <img
-                      src={category.image}
-                      alt={category.name}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-lg font-semibold text-slate-400">
-                      {category.name.charAt(0)}
-                    </span>
-                  )}
-                </div>
-                <span className="text-sm font-medium text-slate-700 group-hover:text-indigo-600">
-                  {category.name}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+      <CategoryShowcase categories={categories} />
 
       {(loadingFeatured || featuredProducts.length > 0) && (
-        <section className="py-8">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-slate-900">Recently added</h2>
-            <Link
-              to={ROUTES.PRODUCTS}
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
-            >
-              View all
-            </Link>
+        <section className="pt-16 sm:pt-24">
+          <Reveal variant="up">
+            <SectionHeading
+              eyebrow="Just in"
+              title="Recently added"
+              description="The newest items in the catalogue, straight from the shelf."
+              action={
+                <Link
+                  to={ROUTES.PRODUCTS}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-xs transition-[border-color,background-color,transform] duration-200 ease-standard hover:-translate-y-px hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800"
+                >
+                  View all
+                  <Icon name="arrowRight" size="sm" />
+                </Link>
+              }
+            />
+          </Reveal>
+
+          <div className="mt-8">
+            {loadingFeatured ? (
+              <ProductGridSkeleton count={FEATURED_LIMIT} />
+            ) : (
+              <ProductGrid products={featuredProducts} />
+            )}
           </div>
-          {loadingFeatured ? (
-            <Loading label="Loading products…" />
-          ) : (
-            <ProductGrid products={featuredProducts} />
-          )}
         </section>
       )}
+
+      <HowItWorks />
+      <ClosingCta />
     </PageWrapper>
   );
 }

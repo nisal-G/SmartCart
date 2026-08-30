@@ -5,6 +5,25 @@ const User = require('../models/User');
 const logger = require('./logger');
 
 /**
+ * Only ever store a profile picture URL we can safely drop into an <img src>
+ * on the frontend. Rejects anything that isn't a well-formed http(s) URL
+ * (e.g. a malformed value, or a `javascript:`/`data:` URL) — the provider
+ * SDKs shouldn't ever hand us those, but the DB should never trust that
+ * blindly. Returns undefined (leaves any existing value untouched) rather
+ * than throwing, since a bad photo URL should never fail a login.
+ */
+function sanitizeAvatarUrl(url) {
+  if (!url || typeof url !== 'string') return undefined;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return undefined;
+    return url;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Finds an existing user for this OAuth identity, linking it to an existing
  * account by email if one already exists (e.g. a user who signed up with
  * Google later logs in with Facebook using the same address), otherwise
@@ -18,10 +37,19 @@ async function findOrCreateOAuthUser(provider, profile) {
   const providerId = profile.id;
   const email = profile.emails && profile.emails[0] && profile.emails[0].value;
   const name = profile.displayName || email || 'SmartCart User';
-  const avatarUrl = profile.photos && profile.photos[0] && profile.photos[0].value;
+  const avatarUrl = sanitizeAvatarUrl(profile.photos && profile.photos[0] && profile.photos[0].value);
 
   let user = await User.findOne({ [`providers.${provider}.id`]: providerId });
-  if (user) return user;
+  if (user) {
+    // Keep the stored picture in step with the provider's current one (it
+    // can change, or a first login before this feature existed may have
+    // left avatarUrl unset) — cheap to check, and avoids ever going stale.
+    if (avatarUrl && user.avatarUrl !== avatarUrl) {
+      user.avatarUrl = avatarUrl;
+      await user.save();
+    }
+    return user;
+  }
 
   if (email) {
     user = await User.findOne({ email: email.toLowerCase() });

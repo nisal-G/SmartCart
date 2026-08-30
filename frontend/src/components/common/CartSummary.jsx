@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '../ui/Button';
+import { Icon } from '../ui/Icon';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { ROUTES } from '../../constants/routes';
 
@@ -20,38 +21,55 @@ export function CartSummary({
   onCancelClear,
 }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-6">
-      <h2 className="text-lg font-semibold text-slate-900">Order summary</h2>
+    <div className="overflow-hidden rounded-panel border border-slate-200/80 bg-white shadow-card lg:sticky lg:top-32">
+      <div className="border-b border-slate-100 bg-sunken/60 px-6 py-4">
+        <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
+          <Icon name="receipt" size="sm" className="text-brand-600" />
+          Order summary
+        </h2>
+      </div>
 
-      <dl className="mt-4 space-y-2 text-sm">
-        <div className="flex items-center justify-between">
-          <dt className="text-slate-500">Items</dt>
-          <dd className="font-medium text-slate-900">{itemCount}</dd>
-        </div>
-        <div className="flex items-center justify-between border-t border-slate-100 pt-2 text-base font-semibold">
-          <dt className="text-slate-900">Total</dt>
-          <dd className="text-slate-900">{formatCurrency(total)}</dd>
-        </div>
-      </dl>
+      <div className="px-6 py-6">
+        <dl className="space-y-3.5 text-sm">
+          <div className="flex items-center justify-between">
+            <dt className="text-slate-500">Items</dt>
+            <dd className="font-semibold tabular-nums text-slate-900">{itemCount}</dd>
+          </div>
+          <div className="flex items-baseline justify-between border-t border-slate-100 pt-4">
+            <dt className="text-base font-bold text-slate-900">Total</dt>
+            <dd className="text-3xl font-extrabold tabular-nums tracking-tight text-slate-900">
+              {formatCurrency(total)}
+            </dd>
+          </div>
+        </dl>
 
-      <Link to={ROUTES.CHECKOUT} className="mt-6 block">
-        <Button fullWidth>Proceed to checkout</Button>
-      </Link>
+        <Link to={ROUTES.CHECKOUT} className="mt-6 block">
+          <Button fullWidth size="lg">
+            Proceed to checkout
+            <Icon name="arrowRight" size="sm" />
+          </Button>
+        </Link>
 
-      <Link to={ROUTES.PRODUCTS} className="mt-3 block">
-        <Button variant="outline" fullWidth>
-          Continue shopping
-        </Button>
-      </Link>
+        <Link to={ROUTES.PRODUCTS} className="mt-3 block">
+          <Button variant="outline" fullWidth>
+            Continue shopping
+          </Button>
+        </Link>
 
-      <div className="mt-6 border-t border-slate-100 pt-4">
+        <p className="mt-5 flex items-center justify-center gap-1.5 rounded-control bg-slate-50 px-3 py-2.5 text-xs text-slate-500">
+          <Icon name="shield" size="xs" className="text-brand-600" />
+          Payment is completed securely through PayHere
+        </p>
+      </div>
+
+      <div className="border-t border-slate-100 px-6 py-4">
         {clearError && (
-          <p className="mb-2 text-xs text-red-600" role="alert">
+          <p className="mb-2 text-xs font-semibold text-red-600" role="alert">
             {clearError}
           </p>
         )}
         {isConfirmingClear ? (
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex animate-fade-in flex-col gap-2 sm:flex-row">
             <Button
               variant="danger"
               size="sm"
@@ -62,12 +80,19 @@ export function CartSummary({
             >
               Confirm clear cart
             </Button>
-            <Button variant="outline" size="sm" fullWidth onClick={onCancelClear} disabled={isClearing}>
+            <Button
+              variant="outline"
+              size="sm"
+              fullWidth
+              onClick={onCancelClear}
+              disabled={isClearing}
+            >
               Cancel
             </Button>
           </div>
         ) : (
-          <Button variant="outline" size="sm" fullWidth onClick={onClearCart}>
+          <Button variant="ghost" size="sm" fullWidth onClick={onClearCart}>
+            <Icon name="trash" size="sm" />
             Clear cart
           </Button>
         )}

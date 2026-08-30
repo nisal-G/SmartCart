@@ -3,12 +3,17 @@ import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
-import { Loading } from '../../components/common/Loading';
+import { Icon } from '../../components/ui/Icon';
+import { Badge } from '../../components/ui/Badge';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { EmptyState } from '../../components/common/EmptyState';
 import { SuccessMessage } from '../../components/common/SuccessMessage';
+import { TableSkeleton } from '../../components/common/skeletons';
+import { Pagination } from '../../components/common/Pagination';
+import { AdminCard, AdminCardList, AdminTable, Td, Th, Tr } from '../../components/admin/AdminTable';
 import productService from '../../services/productService';
 import categoryService from '../../services/categoryService';
+import { useToast } from '../../hooks/useToast';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { formatDate } from '../../utils/formatDate';
 import { ROUTES, adminProductEditPath } from '../../constants/routes';
@@ -24,6 +29,7 @@ const PAGE_SIZE = 10;
 export function AdminProducts() {
   const location = useLocation();
   const [flash] = useState(location.state?.flash || null);
+  const toast = useToast();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const page = parseInt(searchParams.get('page'), 10) || 1;
@@ -53,7 +59,10 @@ export function AdminProducts() {
 
   // Categories are only needed for the filter dropdown — fetched once.
   useEffect(() => {
-    categoryService.getCategories().then(setCategories).catch(() => {});
+    categoryService
+      .getCategories()
+      .then(setCategories)
+      .catch(() => {});
   }, []);
 
   const fetchProducts = useCallback(() => {
@@ -121,6 +130,7 @@ export function AdminProducts() {
       await productService.deleteProduct(productId);
       setConfirmingId(null);
       fetchProducts();
+      toast.success('Product deleted');
     } catch (err) {
       setDeleteError(err.message);
     } finally {
@@ -132,10 +142,20 @@ export function AdminProducts() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <h2 className="text-lg font-semibold text-slate-900">Products</h2>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900">Products</h2>
+          <p className="mt-0.5 text-sm text-slate-500">
+            {pagination?.total != null
+              ? `${pagination.total} product${pagination.total === 1 ? '' : 's'} in the catalogue`
+              : 'Catalogue management'}
+          </p>
+        </div>
         <Link to={ROUTES.ADMIN_PRODUCT_NEW}>
-          <Button size="sm">Add product</Button>
+          <Button size="sm">
+            <Icon name="plus" size="sm" />
+            Add product
+          </Button>
         </Link>
       </div>
 
@@ -143,46 +163,56 @@ export function AdminProducts() {
 
       <form
         onSubmit={applyFilters}
-        className="mb-6 grid gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-5"
+        className="mb-6 rounded-card border border-slate-200/80 bg-white p-4 shadow-card sm:p-5"
       >
-        <div className="sm:col-span-2 lg:col-span-2">
+        <div className="mb-4 flex items-center gap-2.5 text-sm font-semibold text-slate-700">
+          <span className="flex h-7 w-7 items-center justify-center rounded-control bg-slate-100 text-slate-500">
+            <Icon name="filter" size="sm" />
+          </span>
+          Filters
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="sm:col-span-2">
+            <Input
+              label="Search"
+              placeholder="Product name…"
+              value={draftSearch}
+              onChange={(e) => setDraftSearch(e.target.value)}
+            />
+          </div>
+          <Select
+            label="Category"
+            value={draftCategory}
+            onChange={(e) => setDraftCategory(e.target.value)}
+          >
+            <option value="">All categories</option>
+            {categories.map((c) => (
+              <option key={c._id} value={c._id}>
+                {c.name}
+              </option>
+            ))}
+          </Select>
           <Input
-            label="Search"
-            placeholder="Product name…"
-            value={draftSearch}
-            onChange={(e) => setDraftSearch(e.target.value)}
+            label="Min price"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+            value={draftMinPrice}
+            onChange={(e) => setDraftMinPrice(e.target.value)}
+          />
+          <Input
+            label="Max price"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+            value={draftMaxPrice}
+            onChange={(e) => setDraftMaxPrice(e.target.value)}
           />
         </div>
-        <Select
-          label="Category"
-          value={draftCategory}
-          onChange={(e) => setDraftCategory(e.target.value)}
-        >
-          <option value="">All categories</option>
-          {categories.map((c) => (
-            <option key={c._id} value={c._id}>
-              {c.name}
-            </option>
-          ))}
-        </Select>
-        <Input
-          label="Min price"
-          type="number"
-          min="0"
-          step="0.01"
-          value={draftMinPrice}
-          onChange={(e) => setDraftMinPrice(e.target.value)}
-        />
-        <Input
-          label="Max price"
-          type="number"
-          min="0"
-          step="0.01"
-          value={draftMaxPrice}
-          onChange={(e) => setDraftMaxPrice(e.target.value)}
-        />
-        <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-5">
-          <Button type="submit" variant="secondary" size="sm">
+        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
+          <Button type="submit" size="sm">
             Apply filters
           </Button>
           {hasFilters && (
@@ -193,18 +223,27 @@ export function AdminProducts() {
         </div>
       </form>
 
-      {loading && <Loading label="Loading products…" />}
+      {loading && <TableSkeleton rows={PAGE_SIZE} columns={6} />}
 
       {!loading && error && <ErrorMessage message={error} onRetry={fetchProducts} />}
 
       {!loading && !error && products.length === 0 && (
         <EmptyState
           title="No products"
-          description={hasFilters ? 'No products match these filters.' : 'Get started by adding your first product.'}
+          description={
+            hasFilters
+              ? 'No products match these filters. Adjust or clear them above to see more.'
+              : 'Get started by adding your first product.'
+          }
+          // No "Clear filters" action here on purpose — the filter bar
+          // directly above already owns that control, and two identical
+          // buttons on one screen is one too many.
           action={
-            <Link to={ROUTES.ADMIN_PRODUCT_NEW}>
-              <Button>Add product</Button>
-            </Link>
+            hasFilters ? null : (
+              <Link to={ROUTES.ADMIN_PRODUCT_NEW}>
+                <Button>Add product</Button>
+              </Link>
+            )
           }
         />
       )}
@@ -218,37 +257,34 @@ export function AdminProducts() {
           )}
 
           {/* Desktop / tablet table */}
-          <div className="hidden overflow-x-auto rounded-lg border border-slate-200 bg-white md:block">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Product</th>
-                  <th className="px-4 py-3 font-medium">Price</th>
-                  <th className="px-4 py-3 font-medium">Category</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Created</th>
-                  <th className="px-4 py-3 font-medium text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {products.map((product) => (
-                  <ProductRow
-                    key={product._id}
-                    product={product}
-                    isConfirming={confirmingId === product._id}
-                    isDeleting={deletingId === product._id}
-                    onEditPath={adminProductEditPath(product._id)}
-                    onDeleteClick={() => setConfirmingId(product._id)}
-                    onCancelDelete={() => setConfirmingId(null)}
-                    onConfirmDelete={() => handleDelete(product._id)}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <AdminTable
+            head={
+              <>
+                <Th>Product</Th>
+                <Th>Price</Th>
+                <Th>Category</Th>
+                <Th>Status</Th>
+                <Th>Created</Th>
+                <Th align="right">Actions</Th>
+              </>
+            }
+          >
+            {products.map((product) => (
+              <ProductRow
+                key={product._id}
+                product={product}
+                isConfirming={confirmingId === product._id}
+                isDeleting={deletingId === product._id}
+                onEditPath={adminProductEditPath(product._id)}
+                onDeleteClick={() => setConfirmingId(product._id)}
+                onCancelDelete={() => setConfirmingId(null)}
+                onConfirmDelete={() => handleDelete(product._id)}
+              />
+            ))}
+          </AdminTable>
 
           {/* Mobile cards */}
-          <div className="flex flex-col gap-3 md:hidden">
+          <AdminCardList>
             {products.map((product) => (
               <ProductCard
                 key={product._id}
@@ -261,31 +297,9 @@ export function AdminProducts() {
                 onConfirmDelete={() => handleDelete(product._id)}
               />
             ))}
-          </div>
+          </AdminCardList>
 
-          {pagination && pagination.totalPages > 1 && (
-            <div className="mt-6 flex items-center justify-center gap-4">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={pagination.page <= 1}
-                onClick={() => goToPage(pagination.page - 1)}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-slate-600">
-                Page {pagination.page} of {pagination.totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={pagination.page >= pagination.totalPages}
-                onClick={() => goToPage(pagination.page + 1)}
-              >
-                Next
-              </Button>
-            </div>
-          )}
+          <Pagination pagination={pagination} onPageChange={goToPage} className="mt-6" />
         </>
       )}
     </div>
@@ -294,15 +308,27 @@ export function AdminProducts() {
 
 function StatusBadge({ isActive }) {
   return (
-    <span
-      className={
-        isActive === false
-          ? 'inline-flex items-center rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700'
-          : 'inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-800'
-      }
-    >
+    <Badge tone={isActive === false ? 'danger' : 'success'} size="sm">
       {isActive === false ? 'Inactive' : 'Active'}
-    </span>
+    </Badge>
+  );
+}
+
+/** Small product thumbnail with a consistent placeholder. */
+function Thumb({ image, size = 'md' }) {
+  const box = size === 'lg' ? 'h-14 w-14' : 'h-10 w-10';
+  return (
+    <div
+      className={`${box} shrink-0 overflow-hidden rounded-control bg-slate-100 ring-1 ring-slate-200/70`}
+    >
+      {image ? (
+        <img src={image} alt="" className="h-full w-full object-cover" loading="lazy" />
+      ) : (
+        <span className="flex h-full w-full items-center justify-center text-slate-300">
+          <Icon name="package" size="sm" strokeWidth={1.5} />
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -310,7 +336,13 @@ function DeleteActions({ isConfirming, isDeleting, onDeleteClick, onCancelDelete
   if (isConfirming) {
     return (
       <div className="flex items-center justify-end gap-2">
-        <Button variant="danger" size="sm" onClick={onConfirmDelete} loading={isDeleting} disabled={isDeleting}>
+        <Button
+          variant="danger"
+          size="sm"
+          onClick={onConfirmDelete}
+          loading={isDeleting}
+          disabled={isDeleting}
+        >
           Confirm
         </Button>
         <Button variant="outline" size="sm" onClick={onCancelDelete} disabled={isDeleting}>
@@ -321,6 +353,7 @@ function DeleteActions({ isConfirming, isDeleting, onDeleteClick, onCancelDelete
   }
   return (
     <Button variant="outline" size="sm" onClick={onDeleteClick}>
+      <Icon name="trash" size="sm" />
       Delete
     </Button>
   );
@@ -337,28 +370,20 @@ function ProductRow({
 }) {
   const { name, price, category, image, isActive, createdAt } = product;
   return (
-    <tr>
-      <td className="px-4 py-3">
+    <Tr>
+      <Td>
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-md bg-slate-100">
-            {image ? (
-              <img src={image} alt={name} className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-[10px] text-slate-400">
-                No image
-              </div>
-            )}
-          </div>
-          <span className="font-medium text-slate-900">{name}</span>
+          <Thumb image={image} />
+          <span className="font-semibold text-slate-900">{name}</span>
         </div>
-      </td>
-      <td className="px-4 py-3 text-slate-700">{formatCurrency(price)}</td>
-      <td className="px-4 py-3 text-slate-700">{category?.name || '—'}</td>
-      <td className="px-4 py-3">
+      </Td>
+      <Td className="font-medium tabular-nums text-slate-700">{formatCurrency(price)}</Td>
+      <Td className="text-slate-600">{category?.name || '—'}</Td>
+      <Td>
         <StatusBadge isActive={isActive} />
-      </td>
-      <td className="px-4 py-3 text-slate-500">{formatDate(createdAt)}</td>
-      <td className="px-4 py-3">
+      </Td>
+      <Td className="whitespace-nowrap text-slate-500">{formatDate(createdAt)}</Td>
+      <Td align="right">
         {isConfirming ? (
           <DeleteActions
             isConfirming
@@ -371,6 +396,7 @@ function ProductRow({
           <div className="flex items-center justify-end gap-2">
             <Link to={onEditPath}>
               <Button variant="outline" size="sm">
+                <Icon name="pencil" size="sm" />
                 Edit
               </Button>
             </Link>
@@ -383,8 +409,8 @@ function ProductRow({
             />
           </div>
         )}
-      </td>
-    </tr>
+      </Td>
+    </Tr>
   );
 }
 
@@ -399,31 +425,26 @@ function ProductCard({
 }) {
   const { name, price, category, image, isActive, createdAt } = product;
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
+    <AdminCard>
       <div className="flex gap-3">
-        <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-slate-100">
-          {image ? (
-            <img src={image} alt={name} className="h-full w-full object-cover" />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-[10px] text-slate-400">
-              No image
-            </div>
-          )}
-        </div>
+        <Thumb image={image} size="lg" />
         <div className="min-w-0 flex-1">
-          <p className="truncate font-medium text-slate-900">{name}</p>
+          <p className="truncate font-semibold text-slate-900">{name}</p>
           <p className="text-sm text-slate-500">{category?.name || '—'}</p>
-          <div className="mt-1 flex items-center gap-2">
-            <span className="text-sm font-semibold text-slate-900">{formatCurrency(price)}</span>
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            <span className="text-sm font-bold tabular-nums text-slate-900">
+              {formatCurrency(price)}
+            </span>
             <StatusBadge isActive={isActive} />
           </div>
-          <p className="mt-1 text-xs text-slate-400">Created {formatDate(createdAt)}</p>
+          <p className="mt-1.5 text-xs text-slate-400">Created {formatDate(createdAt)}</p>
         </div>
       </div>
-      <div className="mt-3 flex items-center justify-end gap-2">
+      <div className="mt-3 flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
         {!isConfirming && (
           <Link to={onEditPath}>
             <Button variant="outline" size="sm">
+              <Icon name="pencil" size="sm" />
               Edit
             </Button>
           </Link>
@@ -436,6 +457,6 @@ function ProductCard({
           onConfirmDelete={onConfirmDelete}
         />
       </div>
-    </div>
+    </AdminCard>
   );
 }
