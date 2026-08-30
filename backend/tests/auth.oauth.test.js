@@ -2,6 +2,8 @@ const express = require('express');
 const request = require('supertest');
 const app = require('../src/app');
 const authController = require('../src/controllers/authController');
+const oauthCodeRegistry = require('../src/services/oauthCodeRegistry');
+const { frontendUrl, primaryFrontendOrigin } = require('../src/config/frontend');
 const { connect, clearDatabase, closeDatabase } = require('./utils/db');
 const { createUser } = require('./utils/auth');
 
@@ -11,6 +13,7 @@ beforeAll(async () => {
 
 afterEach(async () => {
   await clearDatabase();
+  oauthCodeRegistry.reset();
 });
 
 afterAll(async () => {
@@ -32,6 +35,16 @@ describe('Google OAuth routes (credentials configured in this environment)', () 
     expect(res.headers.location).toContain('accounts.google.com');
   });
 
+  test('sends a state nonce and stores it in a single-use cookie', async () => {
+    const res = await request(app).get('/api/auth/google');
+
+    const state = new URL(res.headers.location).searchParams.get('state');
+    expect(state).toBeTruthy();
+    expect((res.headers['set-cookie'] || []).some((c) => c.startsWith('oauth_state_google='))).toBe(
+      true
+    );
+  });
+
   test('GET /api/auth/google/failure responds 401', async () => {
     const res = await request(app).get('/api/auth/google/failure');
     expect(res.status).toBe(401);
@@ -44,6 +57,59 @@ describe('Facebook OAuth routes (credentials configured in this environment)', (
     const res = await request(app).get('/api/auth/facebook');
     expect(res.status).toBe(302);
     expect(res.headers.location).toContain('facebook.com');
+  });
+
+  test('sends a state nonce and stores it in a single-use cookie', async () => {
+    const res = await request(app).get('/api/auth/facebook');
+
+    const state = new URL(res.headers.location).searchParams.get('state');
+    expect(state).toBeTruthy();
+    expect(
+      (res.headers['set-cookie'] || []).some((c) => c.startsWith('oauth_state_facebook='))
+    ).toBe(true);
+  });
+
+  test('a callback with no state cookie is rejected and redirected to the frontend, never exchanged', async () => {
+    // No oauth_state_facebook cookie is sent, so the state check fails
+    // before passport ever presents the code to Facebook — which is what
+    // makes a forged or replayed callback a non-event. The user must end
+    // up back on the frontend, not on an API error page.
+    const res = await request(app).get(
+      '/api/auth/facebook/callback?code=NEVER_EXCHANGED&state=bogus'
+    );
+
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe(frontendUrl('/login', { error: 'oauth_cancelled' }));
+    expect(res.headers.location.startsWith(primaryFrontendOrigin)).toBe(true);
+  });
+
+  test('a repeated callback for the same code is completed from the first result, not re-exchanged', async () => {
+    // Stand in for a first request that already exchanged this code
+    // successfully (a reload, a proxy retry, a prefetch arriving after it).
+    const { user } = await createUser();
+    const claim = oauthCodeRegistry.claim('facebook', 'ALREADY_EXCHANGED');
+    expect(claim.duplicate).toBe(false);
+    claim.settle({ ok: true, userId: user._id.toString() });
+
+    const res = await request(app).get('/api/auth/facebook/callback?code=ALREADY_EXCHANGED');
+
+    // Logged in and sent to the frontend — no second call to Facebook, and
+    // no "This authorization code has been used." rendered at this URL.
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe(frontendUrl('/auth/callback'));
+    const cookies = res.headers['set-cookie'] || [];
+    expect(cookies.some((c) => c.startsWith('accessToken='))).toBe(true);
+    expect(cookies.some((c) => c.startsWith('refreshToken='))).toBe(true);
+  });
+
+  test('a repeated callback whose first exchange failed redirects to the frontend with the reason', async () => {
+    const claim = oauthCodeRegistry.claim('facebook', 'FAILED_CODE');
+    claim.settle({ ok: false, reason: 'exchange_failed' });
+
+    const res = await request(app).get('/api/auth/facebook/callback?code=FAILED_CODE');
+
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe(frontendUrl('/login', { error: 'exchange_failed' }));
   });
 
   test('GET /api/auth/facebook/failure responds 401', async () => {
@@ -132,7 +198,7 @@ describe('oauthCallback controller (post-authentication session logic)', () => {
     const res = await request(miniApp).get('/callback');
 
     expect(res.status).toBe(302);
-    expect(res.headers.location).toBe(`${process.env.FRONTEND_URL}/auth/callback`);
+    expect(res.headers.location).toBe(frontendUrl('/auth/callback'));
     const cookies = res.headers['set-cookie'] || [];
     expect(cookies.some((c) => c.startsWith('accessToken='))).toBe(true);
     expect(cookies.some((c) => c.startsWith('refreshToken='))).toBe(true);

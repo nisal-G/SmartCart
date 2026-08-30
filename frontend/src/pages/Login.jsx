@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { browserSupportsWebAuthn } from '@simplewebauthn/browser';
 import { PageWrapper } from '../components/ui/PageWrapper';
 import { Button } from '../components/ui/Button';
@@ -8,6 +8,7 @@ import { Icon } from '../components/ui/Icon';
 import { ErrorMessage } from '../components/common/ErrorMessage';
 import { useAuth } from '../hooks/useAuth';
 import { ROUTES } from '../constants/routes';
+import { oauthErrorMessage } from '../constants/oauthErrors';
 
 /**
  * A DOMException's own `.message` for a cancelled/timed-out WebAuthn
@@ -44,6 +45,20 @@ export function Login() {
   const { loginWithGoogle, loginWithFacebook, loginWithPasskey, registerPasskey } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  // Set by the backend when it could not finish an OAuth callback and sent
+  // the browser back here (see backend authController.redirectOAuthFailure).
+  const oauthError = oauthErrorMessage(searchParams.get('error'));
+  // A second click would start a fresh authorization while the first
+  // full-page redirect is still in flight — two provider round-trips for
+  // one intent. The page is navigating away, so this never needs resetting.
+  const [oauthRedirecting, setOauthRedirecting] = useState(false);
+
+  function startOAuth(begin) {
+    if (oauthRedirecting) return;
+    setOauthRedirecting(true);
+    begin();
+  }
   const redirectTo = location.state?.from?.pathname || ROUTES.HOME;
 
   // browserSupportsWebAuthn() just checks for navigator.credentials —
@@ -123,11 +138,24 @@ export function Login() {
 
         <div className="mt-8 animate-scale-in rounded-panel border border-slate-200/80 bg-white p-6 shadow-panel sm:p-8">
           <div className="flex flex-col gap-3">
-            <Button variant="outline" size="lg" fullWidth onClick={loginWithGoogle}>
+            {oauthError && <ErrorMessage title="Sign-in didn't complete" message={oauthError} />}
+            <Button
+              variant="outline"
+              size="lg"
+              fullWidth
+              disabled={oauthRedirecting}
+              onClick={() => startOAuth(loginWithGoogle)}
+            >
               <Icon name="google" size="md" />
               Continue with Google
             </Button>
-            <Button variant="outline" size="lg" fullWidth onClick={loginWithFacebook}>
+            <Button
+              variant="outline"
+              size="lg"
+              fullWidth
+              disabled={oauthRedirecting}
+              onClick={() => startOAuth(loginWithFacebook)}
+            >
               <Icon name="facebook" size="md" />
               Continue with Facebook
             </Button>

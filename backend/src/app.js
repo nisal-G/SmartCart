@@ -14,6 +14,13 @@ const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
+// Render/Vercel/Heroku-style platforms terminate TLS at a proxy and pass
+// the original client on in X-Forwarded-*. Without this, `req.ip` is the
+// proxy's address (so the rate limiters bucket every user together) and
+// `req.protocol` reads as http (so passport-oauth2 would resolve a
+// relative OAuth callbackURL to an http:// one). One hop: the platform's.
+app.set('trust proxy', 1);
+
 // Core middleware
 app.use(
   helmet({

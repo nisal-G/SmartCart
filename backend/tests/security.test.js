@@ -2,6 +2,9 @@ const request = require('supertest');
 const app = require('../src/app');
 const errorHandler = require('../src/middleware/errorHandler');
 const { connect, clearDatabase, closeDatabase } = require('./utils/db');
+// FRONTEND_URL is normalised to bare origins (a browser Origin header never
+// carries a path), so assert against what the allow-list actually holds.
+const { allowedOrigins } = require('../src/config/cors');
 
 beforeAll(async () => {
   await connect();
@@ -38,10 +41,10 @@ describe('CORS configuration', () => {
   test('allows a request from the configured frontend origin', async () => {
     const res = await request(app)
       .get('/api/categories')
-      .set('Origin', process.env.FRONTEND_URL);
+      .set('Origin', allowedOrigins[0]);
 
     expect(res.status).toBe(200);
-    expect(res.headers['access-control-allow-origin']).toBe(process.env.FRONTEND_URL);
+    expect(res.headers['access-control-allow-origin']).toBe(allowedOrigins[0]);
     expect(res.headers['access-control-allow-credentials']).toBe('true');
   });
 

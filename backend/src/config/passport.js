@@ -3,6 +3,7 @@ const { Strategy: GoogleStrategy } = require('passport-google-oauth20');
 const { Strategy: FacebookStrategy } = require('passport-facebook');
 const User = require('../models/User');
 const logger = require('./logger');
+const { CookieStateStore } = require('../services/oauthStateStore');
 
 /**
  * Only ever store a profile picture URL we can safely drop into an <img src>
@@ -95,6 +96,15 @@ if (isGoogleConfigured) {
         callbackURL:
           process.env.GOOGLE_CALLBACK_URL ||
           '/api/auth/google/callback',
+        // Sends (and then verifies) an OAuth `state` nonce — see
+        // services/oauthStateStore.js. Without a store, passport-oauth2
+        // falls back to its NullStore and omits `state` altogether, which
+        // leaves the callback with no CSRF protection and no way to tell a
+        // genuine callback from a forged or replayed one.
+        store: new CookieStateStore('google'),
+        // Honour X-Forwarded-Proto when resolving a relative callbackURL,
+        // so a TLS-terminating platform proxy can't yield an http:// one.
+        proxy: true,
       },
       (accessToken, refreshToken, profile, done) => {
         findOrCreateOAuthUser('google', profile)
@@ -120,6 +130,8 @@ if (isFacebookConfigured) {
           '/api/auth/facebook/callback',
         profileFields: ['id', 'displayName', 'emails', 'photos'],
         graphAPIVersion: 'v21.0',
+        store: new CookieStateStore('facebook'),
+        proxy: true,
       },
       (accessToken, refreshToken, profile, done) => {
         findOrCreateOAuthUser('facebook', profile)

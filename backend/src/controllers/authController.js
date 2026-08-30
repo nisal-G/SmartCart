@@ -4,9 +4,11 @@ const WebAuthnChallenge = require('../models/WebAuthnChallenge');
 const tokenService = require('../services/tokenService');
 const webauthnService = require('../services/webauthnService');
 const asyncHandler = require('../utils/asyncHandler');
+const oauthCodeRegistry = require('../services/oauthCodeRegistry');
+const logger = require('../config/logger');
+const { frontendUrl } = require('../config/frontend');
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const FRONTEND_URL = process.env.FRONTEND_URL;
 
 // --- shared helpers --------------------------------------------------------
 
@@ -45,21 +47,128 @@ function getLatestChallenge(userId, type) {
 }
 
 // --- OAuth (Google / Facebook) ---------------------------------------------
-// The actual redirect to the provider and the token exchange are handled by
-// Passport strategies in routes/authRoutes.js; by the time these run,
-// `req.user` is the Mongo user document passport's verify callback returned.
+// The redirect out to the provider and the authorization-code exchange are
+// handled by the Passport strategies wired up in config/passport.js; by the
+// time oauthCallback runs, `req.user` is the Mongo user document passport's
+// verify callback returned.
+//
+// Everything below exists to make the callback leg safe to hit more than
+// once. The callback URL is a plain GET sitting in the browser's address bar
+// and history, so it gets re-requested for reasons this app does not control
+// (a reload or Back-navigation, a platform proxy retrying an idempotent GET
+// after a slow cold start, a prefetch, a link scanner). An authorization code
+// is single-use, so a second exchange is rejected by the provider — and used
+// to dead-end the user on this API's URL showing the provider's raw error as
+// JSON. Now: the code is exchanged exactly once (oauthCodeGuard), and every
+// failure path lands the user back on the frontend with a message.
+
+/** Where the browser goes after a successful OAuth login. */
+const OAUTH_SUCCESS_PATH = process.env.OAUTH_SUCCESS_PATH || '/auth/callback';
+/** Where the browser goes when OAuth could not be completed. */
+const OAUTH_FAILURE_PATH = process.env.OAUTH_FAILURE_PATH || '/login';
+
+/**
+ * Ensures one authorization code is only ever exchanged with the provider
+ * once. Runs BEFORE passport.authenticate, so a duplicate request never
+ * reaches the strategy and never triggers a second token exchange.
+ *
+ *  - first request for this code: claims it, and passes `req.oauthCodeClaim`
+ *    down the chain to be settled with the result.
+ *  - duplicate: waits for the first request's outcome and completes from it —
+ *    issuing a session for the same user on success, so a reload or retry
+ *    still logs the user in instead of showing "authorization code has been
+ *    used".
+ *
+ * Duplicates are logged with the request metadata, because a duplicate is a
+ * signal worth seeing in production: it says something is re-requesting the
+ * callback URL.
+ */
+const oauthCodeGuard = (provider) =>
+  asyncHandler(async (req, res, next) => {
+    const code = req.query && req.query.code;
+    // No code: either the provider reported an error (`?error=...`) or the
+    // URL was opened directly. Nothing to de-duplicate — let passport decide.
+    if (!code) return next();
+
+    const claim = oauthCodeRegistry.claim(provider, code);
+
+    if (!claim.duplicate) {
+      req.oauthCodeClaim = claim;
+      // Safety net: if this request ends without settling (an unhandled
+      // crash, an aborted connection), release any waiter rather than
+      // leaving it hanging until its timeout.
+      res.on('close', () => claim.settle({ ok: false, reason: 'incomplete' }));
+      return next();
+    }
+
+    logger.warn(
+      {
+        provider,
+        codeRef: claim.key.slice(0, 12),
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        referer: req.headers.referer,
+      },
+      '[auth] Duplicate OAuth callback for an authorization code already claimed — reusing the first exchange instead of calling the provider again'
+    );
+
+    const outcome = await claim.outcome();
+    if (outcome && outcome.ok) {
+      try {
+        return await finishOAuthLogin(req, res, outcome.userId);
+      } catch (err) {
+        logger.error({ err, provider }, '[auth] Could not complete a duplicate OAuth callback');
+        return redirectOAuthFailure(res, 'session_not_established');
+      }
+    }
+    return redirectOAuthFailure(res, (outcome && outcome.reason) || 'duplicate_callback');
+  });
+
+/** Issues the session for `userId` and sends the browser to the frontend. */
+async function finishOAuthLogin(req, res, userId) {
+  const user = await User.findById(userId);
+  if (!user || user.status !== 'active') {
+    return redirectOAuthFailure(res, 'account_unavailable');
+  }
+  await issueSession(user, req, res);
+  return res.redirect(frontendUrl(OAUTH_SUCCESS_PATH));
+}
+
+/**
+ * Sends the browser back to the frontend with a machine-readable reason
+ * instead of rendering an API error page at this URL. The underlying error
+ * is not swallowed — callers log it in full (see oauthAuthenticate in
+ * routes/authRoutes.js) before calling this.
+ */
+function redirectOAuthFailure(res, reason) {
+  return res.redirect(frontendUrl(OAUTH_FAILURE_PATH, { error: reason || 'oauth_failed' }));
+}
 
 const oauthCallback = asyncHandler(async (req, res) => {
-  await issueSession(req.user, req, res);
-
-  if (FRONTEND_URL) {
-    return res.redirect(`${FRONTEND_URL}/auth/callback`);
+  try {
+    await issueSession(req.user, req, res);
+  } catch (err) {
+    // The provider leg worked; we failed to start the session (the database
+    // being unreachable, say). Log it, then still put the user back on the
+    // frontend — the last remaining way this route could dead-end them on
+    // an API error page.
+    logger.error({ err }, '[auth] Could not issue a session after a successful OAuth exchange');
+    if (req.oauthCodeClaim) {
+      req.oauthCodeClaim.settle({ ok: false, reason: 'session_not_established' });
+    }
+    return redirectOAuthFailure(res, 'session_not_established');
   }
-  // No frontend configured yet — respond with the profile directly so the
-  // flow is testable end-to-end via a browser hitting the API alone.
-  return res.status(200).json({ user: req.user });
+
+  // Record the successful exchange before responding, so a duplicate already
+  // waiting on it completes from this result rather than timing out.
+  if (req.oauthCodeClaim) {
+    req.oauthCodeClaim.settle({ ok: true, userId: req.user._id.toString() });
+  }
+
+  return res.redirect(frontendUrl(OAUTH_SUCCESS_PATH));
 });
 
+/** Kept for the legacy /:provider/failure routes. */
 const oauthFailure = (req, res) => {
   res.status(401).json({ message: 'OAuth sign-in failed or was cancelled' });
 };
@@ -343,6 +452,8 @@ const me = asyncHandler(async (req, res) => {
 module.exports = {
   oauthCallback,
   oauthFailure,
+  oauthCodeGuard,
+  redirectOAuthFailure,
   passkeyRegisterOptions,
   passkeyRegisterVerify,
   passkeyLoginOptions,

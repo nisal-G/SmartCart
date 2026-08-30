@@ -1,5 +1,9 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+// Cookie attributes (SameSite/Secure) are derived centrally there — a
+// cross-site frontend needs SameSite=None; Secure, or the browser stores
+// these cookies and then never sends them again.
+const { baseCookieOptions } = require('../config/cookies');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const ACCESS_EXPIRES_IN = process.env.JWT_ACCESS_EXPIRES_IN || '15m';
@@ -13,15 +17,6 @@ if (!JWT_SECRET) {
     'JWT_SECRET is not set. Add it to backend/.env before starting the server.'
   );
 }
-
-const isProd = process.env.NODE_ENV === 'production';
-
-const baseCookieOptions = {
-  httpOnly: true,
-  secure: isProd, // requires HTTPS in production; localhost dev stays http
-  sameSite: 'lax',
-  domain: process.env.COOKIE_DOMAIN || undefined,
-};
 
 function signAccessToken(user) {
   return jwt.sign({ sub: user._id.toString(), role: user.role }, JWT_SECRET, {
