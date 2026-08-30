@@ -79,6 +79,25 @@ describe('POST /api/auth/passkey/register/options', () => {
     expect(res.status).toBe(200);
     expect(res.body.ticket).toBeTruthy();
   });
+
+  test('an authenticated user is bound to their own account even if the body names someone else', async () => {
+    // A second real account whose email an authenticated caller could try
+    // putting in the request body — the endpoint must ignore it entirely
+    // rather than let a signed-in user attach a passkey to it.
+    const { user: otherUser } = await createUser();
+    const { user, accessToken } = await createUser();
+
+    const res = await request(app)
+      .post('/api/auth/passkey/register/options')
+      .set('Cookie', accessCookie(accessToken))
+      .send({ name: 'Someone Else', email: otherUser.email });
+
+    expect(res.status).toBe(200);
+
+    const challenge = await WebAuthnChallenge.findOne({ type: 'registration' });
+    expect(challenge.user.toString()).toBe(user._id.toString());
+    expect(challenge.user.toString()).not.toBe(otherUser._id.toString());
+  });
 });
 
 describe('POST /api/auth/passkey/register/verify', () => {
