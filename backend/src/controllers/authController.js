@@ -7,6 +7,8 @@ const asyncHandler = require('../utils/asyncHandler');
 const oauthCodeRegistry = require('../services/oauthCodeRegistry');
 const logger = require('../config/logger');
 const { frontendUrl } = require('../config/frontend');
+const { stateStoreFor } = require('../services/oauthStateStore');
+const traceRef = require('../utils/traceRef');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -52,15 +54,22 @@ function getLatestChallenge(userId, type) {
 // time oauthCallback runs, `req.user` is the Mongo user document passport's
 // verify callback returned.
 //
-// Everything below exists to make the callback leg safe to hit more than
-// once. The callback URL is a plain GET sitting in the browser's address bar
-// and history, so it gets re-requested for reasons this app does not control
-// (a reload or Back-navigation, a platform proxy retrying an idempotent GET
-// after a slow cold start, a prefetch, a link scanner). An authorization code
-// is single-use, so a second exchange is rejected by the provider — and used
-// to dead-end the user on this API's URL showing the provider's raw error as
-// JSON. Now: the code is exchanged exactly once (oauthCodeGuard), and every
-// failure path lands the user back on the frontend with a message.
+// The callback URL is a plain GET that anything can request: it sits in the
+// browser's address bar and history, and — as Facebook's own
+// `facebookexternalhit` link scanner demonstrates — third parties fetch it
+// too. So the chain is ordered strictly by trust:
+//
+//   1. oauthStateGate  - prove possession of the state cookie issued when
+//                        THIS login started. Nothing else may run first,
+//                        because everything after it touches the single-use
+//                        authorization code.
+//   2. oauthCodeGuard  - claim the code, so it is exchanged exactly once
+//                        however many times the callback is requested.
+//   3. passport        - re-verifies state (authoritatively, consuming the
+//                        cookie) and performs the one token exchange.
+//
+// Every failure path lands the user back on the frontend with a reason,
+// never on an API error page.
 
 /** Where the browser goes after a successful OAuth login. */
 const OAUTH_SUCCESS_PATH = process.env.OAUTH_SUCCESS_PATH || '/auth/callback';
@@ -68,32 +77,96 @@ const OAUTH_SUCCESS_PATH = process.env.OAUTH_SUCCESS_PATH || '/auth/callback';
 const OAUTH_FAILURE_PATH = process.env.OAUTH_FAILURE_PATH || '/login';
 
 /**
- * Ensures one authorization code is only ever exchanged with the provider
- * once. Runs BEFORE passport.authenticate, so a duplicate request never
+ * Per-request diagnostic context for one OAuth callback, built once and
+ * reused by every phase so the log lines for a single attempt line up with
+ * each other. The code and state are referenced by hash only — they are
+ * single-use credentials and never go to a log.
+ */
+function oauthTrace(req, provider, extra) {
+  if (!req.oauthTrace) {
+    req.oauthTrace = {
+      provider,
+      userAgent: req.headers['user-agent'],
+      ip: req.ip,
+      referer: req.headers.referer,
+      codeRef: traceRef(req.query && req.query.code),
+      stateRef: traceRef(req.query && req.query.state),
+      hasStateParam: Boolean(req.query && req.query.state),
+      hasStateCookie: Boolean(req.cookies && req.cookies[`oauth_state_${provider}`]),
+    };
+  }
+  return { ...req.oauthTrace, ...extra };
+}
+
+/**
+ * Gate 1: does this request hold the state cookie from the login that
+ * produced this code?
+ *
+ * This has to run before ANYTHING that touches the authorization code,
+ * the de-duplication registry included. Facebook's link scanner
+ * (`facebookexternalhit`) follows the callback URL it sees during the login
+ * flow, carrying the `code` and `state` query parameters but — being a
+ * server-side fetcher rather than the user's browser — no cookies. It has
+ * to be a complete non-event: it may not exchange the code, and it may not
+ * claim, settle or otherwise disturb the registry entry the real browser is
+ * about to need.
+ *
+ * The check is deliberately non-destructive (see oauthStateStore.check).
+ * Passport still performs its own authoritative verification a step later,
+ * which is what actually consumes the cookie.
+ */
+const oauthStateGate = (provider) => (req, res, next) => {
+  const code = req.query && req.query.code;
+  // No code means the provider reported an error (`?error=access_denied`) or
+  // somebody opened the URL by hand. There is no code to protect, so let
+  // passport produce the proper outcome.
+  if (!code) return next();
+
+  const result = stateStoreFor(provider).check(req, req.query.state);
+
+  if (!result.ok) {
+    logger.warn(
+      oauthTrace(req, provider, { phase: 'state_check', stateValid: false, reason: result.reason }),
+      '[auth] OAuth callback rejected before the authorization code was touched: no valid state cookie'
+    );
+    return redirectOAuthFailure(res, 'oauth_state_invalid');
+  }
+
+  logger.info(
+    oauthTrace(req, provider, { phase: 'state_check', stateValid: true }),
+    '[auth] OAuth callback presented a valid state cookie'
+  );
+  return next();
+};
+
+/**
+ * Gate 2: one authorization code is only ever exchanged with the provider
+ * once. Runs after the state gate and before passport, so a duplicate never
  * reaches the strategy and never triggers a second token exchange.
  *
  *  - first request for this code: claims it, and passes `req.oauthCodeClaim`
  *    down the chain to be settled with the result.
  *  - duplicate: waits for the first request's outcome and completes from it —
- *    issuing a session for the same user on success, so a reload or retry
- *    still logs the user in instead of showing "authorization code has been
- *    used".
+ *    issuing a session for the same user on success, so a retry still logs
+ *    the user in instead of showing "authorization code has been used".
  *
- * Duplicates are logged with the request metadata, because a duplicate is a
- * signal worth seeing in production: it says something is re-requesting the
- * callback URL.
+ * Issuing a session on the duplicate path is safe precisely because of the
+ * ordering: only a request that already proved possession of this login's
+ * state cookie ever reaches it.
  */
 const oauthCodeGuard = (provider) =>
   asyncHandler(async (req, res, next) => {
     const code = req.query && req.query.code;
-    // No code: either the provider reported an error (`?error=...`) or the
-    // URL was opened directly. Nothing to de-duplicate — let passport decide.
     if (!code) return next();
 
     const claim = oauthCodeRegistry.claim(provider, code);
 
     if (!claim.duplicate) {
       req.oauthCodeClaim = claim;
+      logger.info(
+        oauthTrace(req, provider, { phase: 'code_claim', duplicate: false }),
+        '[auth] Claimed the authorization code — this request owns the token exchange'
+      );
       // Safety net: if this request ends without settling (an unhandled
       // crash, an aborted connection), release any waiter rather than
       // leaving it hanging until its timeout.
@@ -102,14 +175,8 @@ const oauthCodeGuard = (provider) =>
     }
 
     logger.warn(
-      {
-        provider,
-        codeRef: claim.key.slice(0, 12),
-        ip: req.ip,
-        userAgent: req.headers['user-agent'],
-        referer: req.headers.referer,
-      },
-      '[auth] Duplicate OAuth callback for an authorization code already claimed — reusing the first exchange instead of calling the provider again'
+      oauthTrace(req, provider, { phase: 'code_claim', duplicate: true }),
+      '[auth] Duplicate OAuth callback for an already-claimed authorization code — reusing the first exchange instead of calling the provider again'
     );
 
     const outcome = await claim.outcome();
@@ -117,7 +184,10 @@ const oauthCodeGuard = (provider) =>
       try {
         return await finishOAuthLogin(req, res, outcome.userId);
       } catch (err) {
-        logger.error({ err, provider }, '[auth] Could not complete a duplicate OAuth callback');
+        logger.error(
+          oauthTrace(req, provider, { phase: 'duplicate_complete', err }),
+          '[auth] Could not complete a duplicate OAuth callback'
+        );
         return redirectOAuthFailure(res, 'session_not_established');
       }
     }
@@ -131,7 +201,12 @@ async function finishOAuthLogin(req, res, userId) {
     return redirectOAuthFailure(res, 'account_unavailable');
   }
   await issueSession(user, req, res);
-  return res.redirect(frontendUrl(OAUTH_SUCCESS_PATH));
+  const location = frontendUrl(OAUTH_SUCCESS_PATH);
+  logger.info(
+    { ...req.oauthTrace, phase: 'redirect', outcome: 'success', userId: String(user._id), location },
+    '[auth] OAuth login complete — session cookies set'
+  );
+  return res.redirect(location);
 }
 
 /**
@@ -141,7 +216,12 @@ async function finishOAuthLogin(req, res, userId) {
  * routes/authRoutes.js) before calling this.
  */
 function redirectOAuthFailure(res, reason) {
-  return res.redirect(frontendUrl(OAUTH_FAILURE_PATH, { error: reason || 'oauth_failed' }));
+  const location = frontendUrl(OAUTH_FAILURE_PATH, { error: reason || 'oauth_failed' });
+  logger.warn(
+    { ...(res.req && res.req.oauthTrace), phase: 'redirect', outcome: 'failure', reason, location },
+    '[auth] OAuth callback finished without a session'
+  );
+  return res.redirect(location);
 }
 
 const oauthCallback = asyncHandler(async (req, res) => {
@@ -165,7 +245,18 @@ const oauthCallback = asyncHandler(async (req, res) => {
     req.oauthCodeClaim.settle({ ok: true, userId: req.user._id.toString() });
   }
 
-  return res.redirect(frontendUrl(OAUTH_SUCCESS_PATH));
+  const location = frontendUrl(OAUTH_SUCCESS_PATH);
+  logger.info(
+    {
+      ...req.oauthTrace,
+      phase: 'redirect',
+      outcome: 'success',
+      userId: req.user._id.toString(),
+      location,
+    },
+    '[auth] OAuth login complete — session cookies set'
+  );
+  return res.redirect(location);
 });
 
 /** Kept for the legacy /:provider/failure routes. */
@@ -452,6 +543,7 @@ const me = asyncHandler(async (req, res) => {
 module.exports = {
   oauthCallback,
   oauthFailure,
+  oauthStateGate,
   oauthCodeGuard,
   redirectOAuthFailure,
   passkeyRegisterOptions,

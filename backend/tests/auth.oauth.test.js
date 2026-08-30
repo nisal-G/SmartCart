@@ -28,6 +28,20 @@ afterAll(async () => {
 // exactly what passport's verify callback would have produced after a real
 // exchange, without performing one.
 
+/**
+ * Runs the real initiating leg (GET /api/auth/facebook) and returns the
+ * `state` it sent to Facebook together with the cookie it set — i.e. exactly
+ * what the user's browser carries into the callback. No network call is made:
+ * passport only builds a redirect URL here.
+ */
+async function startFacebookLogin() {
+  const res = await request(app).get('/api/auth/facebook');
+  const state = new URL(res.headers.location).searchParams.get('state');
+  const cookie = (res.headers['set-cookie'] || [])
+    .find((c) => c.startsWith('oauth_state_facebook='))
+    .split(';')[0];
+  return { state, cookie };
+}
 describe('Google OAuth routes (credentials configured in this environment)', () => {
   test('GET /api/auth/google redirects to Google without making a real request', async () => {
     const res = await request(app).get('/api/auth/google');
@@ -79,8 +93,45 @@ describe('Facebook OAuth routes (credentials configured in this environment)', (
     );
 
     expect(res.status).toBe(302);
-    expect(res.headers.location).toBe(frontendUrl('/login', { error: 'oauth_cancelled' }));
+    expect(res.headers.location).toBe(frontendUrl('/login', { error: 'oauth_state_invalid' }));
     expect(res.headers.location.startsWith(primaryFrontendOrigin)).toBe(true);
+  });
+
+  test("a cookie-less fetch of the callback URL does not claim the browser's authorization code", async () => {
+    // Facebook's own link scanner (facebookexternalhit) follows the callback
+    // URL during the login flow: same `code` and `state` query parameters,
+    // no cookies. It has to be a complete non-event. If it were allowed to
+    // claim the code first, the real browser arriving a moment later would
+    // be treated as a duplicate and handed the scanner's failed outcome —
+    // a login that can never succeed.
+    const res = await request(app)
+      .get('/api/auth/facebook/callback?code=BROWSER_CODE&state=bogus')
+      .set('User-Agent', 'facebookexternalhit/1.1');
+
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe(frontendUrl('/login', { error: 'oauth_state_invalid' }));
+
+    // The code is still untouched: the browser's request would own it.
+    expect(oauthCodeRegistry.claim('facebook', 'BROWSER_CODE').duplicate).toBe(false);
+  });
+
+  test('a cookie-less fetch cannot pick up a session from an already-completed login', async () => {
+    // The scanner can also arrive AFTER the browser has finished. Presenting
+    // the code alone must not be enough to be handed that session: the state
+    // gate turns the request away before the de-duplication path is reached.
+    const { user } = await createUser();
+    const claim = oauthCodeRegistry.claim('facebook', 'COMPLETED_CODE');
+    claim.settle({ ok: true, userId: user._id.toString() });
+
+    const res = await request(app)
+      .get('/api/auth/facebook/callback?code=COMPLETED_CODE&state=bogus')
+      .set('User-Agent', 'facebookexternalhit/1.1');
+
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe(frontendUrl('/login', { error: 'oauth_state_invalid' }));
+    const cookies = res.headers['set-cookie'] || [];
+    expect(cookies.some((c) => c.startsWith('accessToken='))).toBe(false);
+    expect(cookies.some((c) => c.startsWith('refreshToken='))).toBe(false);
   });
 
   test('a repeated callback for the same code is completed from the first result, not re-exchanged', async () => {
@@ -91,7 +142,10 @@ describe('Facebook OAuth routes (credentials configured in this environment)', (
     expect(claim.duplicate).toBe(false);
     claim.settle({ ok: true, userId: user._id.toString() });
 
-    const res = await request(app).get('/api/auth/facebook/callback?code=ALREADY_EXCHANGED');
+    const { state, cookie } = await startFacebookLogin();
+    const res = await request(app)
+      .get(`/api/auth/facebook/callback?code=ALREADY_EXCHANGED&state=${state}`)
+      .set('Cookie', cookie);
 
     // Logged in and sent to the frontend — no second call to Facebook, and
     // no "This authorization code has been used." rendered at this URL.
@@ -106,7 +160,10 @@ describe('Facebook OAuth routes (credentials configured in this environment)', (
     const claim = oauthCodeRegistry.claim('facebook', 'FAILED_CODE');
     claim.settle({ ok: false, reason: 'exchange_failed' });
 
-    const res = await request(app).get('/api/auth/facebook/callback?code=FAILED_CODE');
+    const { state, cookie } = await startFacebookLogin();
+    const res = await request(app)
+      .get(`/api/auth/facebook/callback?code=FAILED_CODE&state=${state}`)
+      .set('Cookie', cookie);
 
     expect(res.status).toBe(302);
     expect(res.headers.location).toBe(frontendUrl('/login', { error: 'exchange_failed' }));

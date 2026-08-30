@@ -50,37 +50,70 @@ class CookieStateStore {
     return callback(null, state);
   }
 
-  /** passport-oauth2 calls this (arity 4) when the provider redirects back. */
-  verify(req, state, meta, callback) {
+  /**
+   * Non-destructive state check: does this request actually hold the state
+   * cookie that was issued when *this* login started, and does it match the
+   * `state` the provider echoed back?
+   *
+   * Separated from `verify` so the answer can be had BEFORE anything else
+   * in the callback chain touches the authorization code. Anything holding
+   * the callback URL but not the cookie — Facebook's own
+   * `facebookexternalhit` link scanner, a prefetch, a forged link — has to
+   * be turned away before it can affect the real browser's login. Reading
+   * it does not consume it; only `verify` does that.
+   *
+   * Returns `{ ok, reason, hasCookie }`; `reason` is for logs, never shown.
+   */
+  check(req, state) {
     const token = req.cookies && req.cookies[this.cookieName];
-
-    // Single use: burn the cookie whether or not it checks out, so a
-    // captured callback URL can never be replayed against a live state.
-    req.res.clearCookie(this.cookieName, this.cookieOptions);
-
-    if (!token) {
-      return callback(null, false, {
-        message: 'Sign-in session expired or cookies are blocked. Please try again.',
-      });
-    }
+    if (!token) return { ok: false, reason: 'state_cookie_missing', hasCookie: false };
 
     let payload;
     try {
       payload = jwt.verify(token, JWT_SECRET);
     } catch {
-      return callback(null, false, {
-        message: 'Sign-in session expired. Please try again.',
-      });
+      // Expired (older than STATE_TTL_MS) or tampered with.
+      return { ok: false, reason: 'state_cookie_invalid', hasCookie: true };
     }
 
-    if (payload.pv !== this.provider || !state || !safeEqual(payload.st, state)) {
-      return callback(null, false, {
-        message: 'Sign-in could not be verified. Please start again.',
-      });
+    if (payload.pv !== this.provider) {
+      return { ok: false, reason: 'state_provider_mismatch', hasCookie: true };
+    }
+    if (!state) return { ok: false, reason: 'state_param_missing', hasCookie: true };
+    if (!safeEqual(payload.st, state)) {
+      return { ok: false, reason: 'state_mismatch', hasCookie: true };
     }
 
-    return callback(null, true);
+    return { ok: true, reason: 'state_ok', hasCookie: true };
   }
+
+  /** passport-oauth2 calls this (arity 4) when the provider redirects back. */
+  verify(req, state, meta, callback) {
+    const result = this.check(req, state);
+
+    // Single use: burn the cookie whether or not it checks out, so a
+    // captured callback URL can never be replayed against a live state.
+    req.res.clearCookie(this.cookieName, this.cookieOptions);
+
+    if (result.ok) return callback(null, true);
+
+    return callback(null, false, {
+      reason: result.reason,
+      message: result.hasCookie
+        ? 'Sign-in could not be verified. Please start again.'
+        : 'Sign-in session expired or cookies are blocked. Please try again.',
+    });
+  }
+}
+
+// One instance per provider, shared by the passport strategy (which does the
+// authoritative, cookie-consuming `verify`) and by the route-level state gate
+// (which only `check`s). Both must agree on the cookie name and options.
+const stores = new Map();
+
+function stateStoreFor(provider) {
+  if (!stores.has(provider)) stores.set(provider, new CookieStateStore(provider));
+  return stores.get(provider);
 }
 
 /** Constant-time compare of two ASCII strings of possibly different length. */
@@ -91,4 +124,4 @@ function safeEqual(a, b) {
   return crypto.timingSafeEqual(bufA, bufB);
 }
 
-module.exports = { CookieStateStore, STATE_TTL_MS };
+module.exports = { CookieStateStore, stateStoreFor, STATE_TTL_MS };

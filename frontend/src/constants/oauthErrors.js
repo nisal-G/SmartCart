@@ -7,6 +7,10 @@
 export const OAUTH_ERROR_MESSAGES = {
   oauth_failed: "We couldn't complete sign-in with that provider. Please try again.",
   oauth_cancelled: 'Sign-in was cancelled, or the sign-in session expired. Please try again.',
+  // The callback did not carry the state cookie from the login that started
+  // it — an expired attempt, a browser blocking cookies, or a request that
+  // was never this browser's to begin with.
+  oauth_state_invalid: 'Your sign-in session expired or could not be verified. Please try again.',
   duplicate_callback: 'That sign-in link had already been used. Please sign in again.',
   account_unavailable: 'This account is not available. Please contact support.',
   timeout: 'Sign-in took too long to complete. Please try again.',

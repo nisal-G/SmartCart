@@ -15,13 +15,17 @@ const {
 const router = express.Router();
 
 // --- OAuth (Google / Facebook) -------------------------------------------
-// Each provider gets the same three-step chain:
-//   1. requireProvider  - 503 when the server has no credentials for it
-//   2. oauthCodeGuard   - the authorization code is exchanged exactly once,
-//                         no matter how often the callback URL is requested
-//   3. oauthAuthenticate- passport, with a custom callback so that NO failure
-//                         can escape as an API error page at this URL
-// See controllers/authController.js for why (2) and (3) exist.
+// Each provider gets the same four-step callback chain, ordered so that
+// each step only runs for a request the previous one has vouched for:
+//   1. requireProvider   - 503 when the server has no credentials for it
+//   2. oauthStateGate    - reject anything not holding this login's state
+//                          cookie BEFORE the authorization code is touched
+//   3. oauthCodeGuard    - claim the code, so it is exchanged exactly once
+//                          however often the callback URL is requested
+//   4. oauthAuthenticate - passport: authoritative state verification, then
+//                          the single token exchange, with a custom callback
+//                          so NO failure escapes as an API error page here
+// See controllers/authController.js for why the order matters.
 
 function requireProvider(provider, isConfigured) {
   const label = provider === 'google' ? 'Google' : 'Facebook';
@@ -52,16 +56,31 @@ function oauthAuthenticate(provider) {
   return (req, res, next) => {
     passport.authenticate(provider, { session: false }, (err, user, info) => {
       if (err) {
-        logger.error({ err, provider }, '[auth] OAuth callback failed');
+        logger.error(
+          { ...req.oauthTrace, phase: 'authenticate', err },
+          '[auth] OAuth callback failed'
+        );
         if (req.oauthCodeClaim) req.oauthCodeClaim.settle({ ok: false, reason: 'exchange_failed' });
         return authController.redirectOAuthFailure(res, 'oauth_failed');
       }
       if (!user) {
-        // No error, no user: the person cancelled at the provider, or the
-        // `state` check rejected the callback (see oauthStateStore).
-        logger.warn({ provider, info }, '[auth] OAuth callback did not produce a user');
-        if (req.oauthCodeClaim) req.oauthCodeClaim.settle({ ok: false, reason: 'oauth_cancelled' });
-        return authController.redirectOAuthFailure(res, 'oauth_cancelled');
+        // No error, no user: the person cancelled at the provider, or
+        // passport's own `state` verification rejected the callback. The
+        // latter should be unreachable here — oauthStateGate already
+        // checked the same cookie before the code was claimed — so log
+        // whichever it was rather than assuming.
+        const reason = (info && info.reason) || null;
+        logger.warn(
+          { ...req.oauthTrace, phase: 'authenticate', reason, info },
+          '[auth] OAuth callback did not produce a user'
+        );
+        if (req.oauthCodeClaim) {
+          req.oauthCodeClaim.settle({ ok: false, reason: reason ? 'oauth_state_invalid' : 'oauth_cancelled' });
+        }
+        return authController.redirectOAuthFailure(
+          res,
+          reason ? 'oauth_state_invalid' : 'oauth_cancelled'
+        );
       }
       req.user = user;
       return next();
@@ -79,6 +98,7 @@ router.get('/google', googleConfigured, (req, res, next) => {
 router.get(
   '/google/callback',
   googleConfigured,
+  authController.oauthStateGate('google'),
   authController.oauthCodeGuard('google'),
   oauthAuthenticate('google'),
   authController.oauthCallback
@@ -91,6 +111,7 @@ router.get('/facebook', facebookConfigured, (req, res, next) => {
 router.get(
   '/facebook/callback',
   facebookConfigured,
+  authController.oauthStateGate('facebook'),
   authController.oauthCodeGuard('facebook'),
   oauthAuthenticate('facebook'),
   authController.oauthCallback
